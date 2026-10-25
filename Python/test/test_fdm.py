@@ -30,13 +30,11 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 """
 
+import math
 import unittest
 
 import QuantLib_Risks as ql
-if ql.XAD_ENABLED:
-    from xad import math
-else:
-    import math
+
 
 class FdmTest(unittest.TestCase):
     def setUp(self):
@@ -63,9 +61,9 @@ class FdmTest(unittest.TestCase):
         self.assertAlmostEqual(m.location(0), 0.0, 14)
         self.assertAlmostEqual(m.location(9), 1.0, 14)
 
-        p = list(x for x in m.locations() if ql.close_enough(x, 0.5))
+        p = [x for x in m.locations() if ql.close_enough(x, 0.5)]
         self.assertEqual(len(p), 1)
-        p = list(x for x in m.locations() if ql.close_enough(x, 0.75))
+        p = [x for x in m.locations() if ql.close_enough(x, 0.75)]
         self.assertEqual(len(p), 0)
 
         m = ql.Predefined1dMesher([0,2,4])
@@ -128,10 +126,10 @@ class FdmTest(unittest.TestCase):
         locations = m.locations(0)
         self.assertEqual(len(locations), 6)
 
-        self.assertEqual(list(map(lambda x: int(x+0.5), locations)), [0, 1, 0, 1, 0, 1])
+        self.assertEqual(list(map(round, locations)), [0, 1, 0, 1, 0, 1])
 
         locations = m.locations(1)
-        self.assertEqual(list(map(lambda x: int(x+0.5), locations)), [0, 0, 1, 1, 2, 2])
+        self.assertEqual(list(map(round, locations)), [0, 0, 1, 1, 2, 2])
 
     def testFdmLinearOpComposite(self):
         """Testing linear operator composites"""
@@ -180,16 +178,16 @@ class FdmTest(unittest.TestCase):
         self.assertAlmostEqual(foo.t2, 2.0, 14)
 
         r = ql.Array([1,2,3,4])
-        self.assertEqual(list(c.apply(r)), list(2*r))
-        self.assertEqual(list(c.apply_mixed(r)), list(3*r))
-        self.assertEqual(list(c.apply_direction(7, r)), list(7*r))
+        self.assertEqual(c.apply(r), 2*r)
+        self.assertEqual(c.apply_mixed(r), 3*r)
+        self.assertEqual(c.apply_direction(7, r), 7*r)
 
-        s = list(c.solve_splitting(7, r, 0.5))
+        s = c.solve_splitting(7, r, 0.5)
         self.assertEqual(len(s), len(r))
         for i, x in enumerate(s):
             self.assertAlmostEqual(x, 3.5*r[i], 14)
 
-        self.assertEqual(list(c.preconditioner(r, 4)), list(4*r))
+        self.assertEqual(c.preconditioner(r, 4), 4*r)
 
         class Bar:
             @classmethod
@@ -241,7 +239,7 @@ class FdmTest(unittest.TestCase):
 
         op.setTime(0, 0.1)
 
-        c = list(map(lambda x: payoff(math.exp(x)), mesher.locations(0)))
+        c = [payoff(math.exp(x)) for x in mesher.locations(0)]
         p = op.apply(c)
 
         e = [ 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -390,7 +388,7 @@ class FdmTest(unittest.TestCase):
 
         exercise = ql.AmericanExercise(todaysDate, maturityDate)
 
-        spot = ql.QuoteHandle(ql.SimpleQuote(100.0))
+        spot = ql.makeQuoteHandle(100.0)
         volatility = ql.BlackConstantVol(todaysDate, ql.TARGET(), 0.20, dc)
 
         process = ql.BlackScholesMertonProcess(
@@ -539,7 +537,7 @@ class FdmTest(unittest.TestCase):
         s0  = 100
 
         process = ql.BlackScholesMertonProcess(
-            ql.QuoteHandle(ql.SimpleQuote(s0)),
+            ql.makeQuoteHandle(s0),
             ql.YieldTermStructureHandle(
                 ql.FlatForward(todaysDate, q, dc)),
             ql.YieldTermStructureHandle(

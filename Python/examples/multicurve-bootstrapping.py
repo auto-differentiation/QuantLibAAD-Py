@@ -155,7 +155,7 @@ def priceMulticurveBootstrappingSwap(
         ),
     ]
     eoniaInstruments.extend(
-        ql.DatedOISRateHelper(startDate, endDate, ql.QuoteHandle(quote), eonia)
+        ql.OISRateHelper.forDates(startDate, endDate, ql.QuoteHandle(quote), eonia)
         for startDate, endDate, quote in datedOisQuotes
     )
 
