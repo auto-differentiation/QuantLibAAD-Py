@@ -116,6 +116,8 @@ build-verbosity = 1
 before-all = "cmake -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
 config-settings = { "cmake.define.QLR_QUANTLIB_PREFIX" = "{project}/build/quantlib-prefix" }
 test-groups = ["test"]
+# xad 2.1 is released together with this package: until then, test against xad-py main
+before-test = "pip install \"xad @ git+https://github.com/auto-differentiation/xad-py.git@7961b377f2cbbfec994193f55c23d7be34a72b5c\""
 # importlib mode tests the installed package; Python/test would clash with the stdlib test package
 test-command = "pytest -p no:cacheprovider --import-mode=importlib {project}/Python/test"
 
