@@ -3,15 +3,19 @@
 # - OR pushes of tags starting with v*
 # - OR manual dispatch on repo
 # publishes to test pypi if:
-# - in auto-differentiation/QuantLib-Risks repository
-# - AND pushes of tags starting with v*
-# - OR manual dispatch on repo
+# - in auto-differentiation/QuantLib-Risks-Py repository AND
+#   - pushes of tags starting with v*
+#   - OR manual dispatch on repo
 # publishes to real PyPI if:
 # - publish to Test PyPI worked (with all build conditions above)
 # - and if it's a version tag (starting with v*)
+#
+# cibuildwheel settings live in [tool.cibuildwheel] in pyproject.toml:
+# one job per platform + Python (the SWIG wrapper is a single slow TU);
+# QuantLib is built in before-all, ccache shares its objects across a platform's jobs.
 
 name: QuantLib-Risks wheels
-on: 
+on:
   pull_request:
     branches:
       - main
@@ -19,131 +23,115 @@ on:
     tags:
       - v*
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   build_wheels:
-    name: Wheels
+    name: Wheels ${{ matrix.platform.name }} ${{ matrix.python }}
     strategy:
       fail-fast: false
       matrix:
-        buildplat:  ["win_amd64", "macosx_x86_64", "manylinux_x86_64", "musllinux_x86_64"]
-        python: ["cp38", "cp39", "cp310", "cp311", "cp312"]
-        include:
-          - buildplat: "manylinux_x86_64"
-            os: ubuntu-20.04
-            platform: linux
-            ccache: ccache
-            preset: linux-xad-gcc-ninja-release
-          - buildplat: "musllinux_x86_64"
-            os: ubuntu-20.04
-            platform: linux
-            ccache: ccache
-            preset: linux-xad-gcc-ninja-release
-          - buildplat: "macosx_x86_64"
-            os: "macos-12"
-            platform: macos
-            ccache: ccache
-            preset: linux-xad-gcc-ninja-release
-          - buildplat: "win_amd64"
-            os: windows-2022
-            platform: windows
-            ccache: sccache
-            preset: windows-xad-msvc-release
-        exclude:
-          # gives "is not a supported wheel on this platform" for some reason
-          - buildplat: "macosx_x86_64"
-            python: "cp38"
-    runs-on: ${{ matrix.os }}
-    env:
-        QL_PRESET: ${{ matrix.preset }}
-        CCACHE_EXE: ${{ matrix.ccache }}
+        python: [cp310, cp311, cp312, cp313, cp314]
+        platform:
+          - { name: manylinux-x86_64, os: ubuntu-24.04, build: "manylinux*" }
+          - { name: musllinux-x86_64, os: ubuntu-24.04, build: "musllinux*" }
+          - { name: manylinux-aarch64, os: ubuntu-24.04-arm, build: "manylinux*" }
+          - { name: musllinux-aarch64, os: ubuntu-24.04-arm, build: "musllinux*" }
+          - { name: macos-x86_64, os: macos-15-intel, build: "*" }
+          - { name: macos-arm64, os: macos-15, build: "*" }
+          - { name: windows-amd64, os: windows-2022, build: "*" }
+    runs-on: ${{ matrix.platform.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
-          fetch-depth: 0
-      - name: Setup Boost (Windows)
-        if: ${{ matrix.platform == 'windows' }}
-        run: |
-          choco install -y ninja
-          $Url = "https://downloads.sourceforge.net/project/boost/boost-binaries/1.84.0/boost_1_84_0-msvc-14.3-64.exe"
-          (New-Object System.Net.WebClient).DownloadFile($Url, "$RUNNER_TEMP\boost.exe")
-          Start-Process -Wait -FilePath "$RUNNER_TEMP\boost.exe" "/SILENT","/SP-","/SUPPRESSMSGBOXES","/DIR=C:\local\boost"
-      - name: Setup Boost (Mac)
-        if: ${{ matrix.platform == 'macos' }}
-        run: |
-            brew install boost
-            brew install ninja
-            brew install ccache
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2.12
-        with:
-            key: ${{ matrix.buildplat }}-${{ matrix.python }}
-            variant: ${{ matrix.ccache }}
-            max-size: 650M
-      - name: Setup boost path (Win)
-        if: ${{ matrix.platform == 'windows' }}
-        shell: cmd
-        run: echo BOOST_ROOT=C:\local\boost >> %GITHUB_ENV%
-      - name: Store CCache dir (Linux)
-        if: ${{ matrix.platform == 'linux' }}
-        run: |
-            HOST_CCACHE_DIR="$(ccache -k cache_dir)"
-            mkdir -p $HOST_CCACHE_DIR
-            echo "HOST_CCACHE_DIR=${HOST_CCACHE_DIR}" >> $GITHUB_ENV
-      - name: Stub `setup.py` check (Linux/Mac)
-        if: ${{ matrix.platform != 'windows' }}
-        run: |
-            mkdir -p build/${{ matrix.preset }}/Python
-            touch build/${{ matrix.preset }}/Python/setup.py
-      - name: Stub `setup.py` check (Windows)
-        if: ${{ matrix.platform == 'windows' }}
+          persist-credentials: false
+      - name: Compiler cache setup
         shell: bash
         run: |
-            mkdir -p build/${{ matrix.preset }}/Python
-            touch build/${{ matrix.preset }}/Python/setup.py
+          # outside the checkout, which is copied into the Linux build containers
+          echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_DIR=$RUNNER_TEMP/sccache" >> "$GITHUB_ENV"
+          case "$RUNNER_OS" in
+            macOS)
+              echo "CMAKE_CXX_COMPILER_LAUNCHER=ccache" >> "$GITHUB_ENV" ;;
+            Windows)
+              # sccache needs Ninja (bundled with Visual Studio), not the VS generator
+              echo "CMAKE_GENERATOR=Ninja" >> "$GITHUB_ENV"
+              echo "CMAKE_CXX_COMPILER_LAUNCHER=sccache" >> "$GITHUB_ENV" ;;
+          esac
+      - name: Compiler cache
+        uses: hendrikmuhs/ccache-action@v1.2.24
+        with:
+          key: ${{ matrix.platform.name }}
+          variant: ${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
+          max-size: 2G
+      - name: MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1.13.0
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v4.3.4
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat }}
-          CIBW_BEFORE_BUILD_LINUX: /bin/bash ./tools/prebuild_ql-risks.sh
-          CIBW_ENVIRONMENT: QLR_PYTHON_VERSION="${{ matrix.python }}"
-          CIBW_ENVIRONMENT_PASS_LINUX: QL_PREFIX HOST_CCACHE_DIR QLR_PYTHON_VERSION CIBUILDWHEEL=1
-          CIBW_BEFORE_BUILD_WINDOWS: tools\prebuild_ql-risks.bat
-          CIBW_BEFORE_BUILD_MACOS: bash ./tools/prebuild_ql-risks.sh
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
-          CIBW_BEFORE_TEST: pip install pandas numpy matplotlib jinja2
-          CIBW_TEST_COMMAND_WINDOWS: ${{ github.workspace }}/Python/run_tests.bat
-          CIBW_TEST_COMMAND_MACOS: bash ${{ github.workspace }}/Python/run_tests.sh
-          CIBW_TEST_COMMAND_LINUX: bash /host${{ github.workspace }}/Python/run_tests.sh
-          CIBW_BUILD_VERBOSITY: 2
-        with:
-          package-dir: build/${{ matrix.preset }}/Python
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.build }}
+          # Linux builds run in containers: ccache installed there, cache on the host (/host)
+          CIBW_BEFORE_ALL_LINUX: dnf install -y ccache || apk add --no-cache ccache
+          CIBW_INHERIT: "before-all-linux: prepend"
+          CIBW_ENVIRONMENT_LINUX: >-
+            CMAKE_CXX_COMPILER_LAUNCHER=ccache
+            CCACHE_DIR=/host${{ runner.temp }}/ccache/$AUDITWHEEL_PLAT
+            CCACHE_MAXSIZE=1G
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: cibw-wheels-${{ matrix.python }}-${{ matrix.buildplat }}
+          name: cibw-wheels-${{ matrix.platform.name }}-${{ matrix.python }}
           path: ./wheelhouse/*.whl
           if-no-files-found: error
 
+  build_sdist:
+    name: SDist
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Build sdist
+        run: pipx run build --sdist
+      - name: Check metadata
+        run: pipx run twine check --strict dist/*
+      - name: Upload sdist
+        uses: actions/upload-artifact@v7
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
   test-publish:
-    needs: build_wheels
+    needs: [build_wheels, build_sdist]
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.repository == 'auto-differentiation/QuantLib-Risks-Py' &&
+      github.repository == 'auto-differentiation/QuantLib-Risks-Py' &&
+      (github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')))
-    environment: 
+    environment:
       name: testpypi
       url: https://test.pypi.org/p/QuantLib-Risks
     permissions:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: cibw-*
           path: dist
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@v1.8.12
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
+        name: Publish on Test PyPI
         with:
           verbose: true
           repository-url: https://test.pypi.org/legacy/
@@ -159,12 +147,12 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: cibw-*
           path: dist
           merge-multiple: true
-      - uses: pypa/gh-action-pypi-publish@v1.8.12
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
         name: Publish on PyPI
         with:
           verbose: true

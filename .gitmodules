@@ -4,6 +4,9 @@
 [submodule "lib/xad"]
 	path = lib/xad
 	url = https://github.com/auto-differentiation/xad.git
-[submodule "lib/QuantLib-Risks-Cpp"]
-	path = lib/QuantLib-Risks-Cpp
-	url = https://github.com/auto-differentiation/QuantLib-Risks-Cpp.git
+[submodule "lib/QuantLibAAD"]
+	path = lib/QuantLibAAD
+	url = https://github.com/auto-differentiation/QuantLibAAD.git
+[submodule "lib/pybind11"]
+	path = lib/pybind11
+	url = https://github.com/pybind/pybind11.git

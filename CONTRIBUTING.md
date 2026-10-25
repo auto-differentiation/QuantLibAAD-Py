@@ -9,14 +9,14 @@ release.
 Contributions to this repository should only be made if they are related to building
 the Python bindings for QuantLib-Risks (enabled with XAD).
 
-1.  Fork, then clone the repository:
+1.  Fork, then clone the repository with its submodules:
 
 ```bash
-git clone https://github.com/yourusername/QuantLib-Risks.git
+git clone --recurse-submodules https://github.com/yourusername/QuantLib-Risks-Py.git
 ```
 
-2.  Follow the [Build Instructions](README.md) to setup the dependencies and 
-    build the software. Make sure all tests pass.
+2.  Follow the [Build Instructions](#build-instructions) below to build the software.
+    Make sure all tests pass.
 
 3.  Create a feature branch, typically based on master, for your change
 
@@ -47,6 +47,47 @@ accepted:
 
 -   Write good commit messages (short one-liner, followed by a blank line, 
     followed by a more detailed explanation)
+
+## Build Instructions
+
+The package is built in one step by [scikit-build-core](https://scikit-build-core.readthedocs.io)
+(see `pyproject.toml`): CMake builds QuantLib as a static library together with
+[XAD](https://github.com/auto-differentiation/xad) and
+[QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) from the `lib/` submodules,
+then the SWIG module from `SWIG/` and `Python/QuantLib_Risks/`.
+
+Requirements: Python 3.10+, and a C++17 compiler.
+CMake, Ninja and SWIG are installed as build dependencies.
+Boost headers are taken from the system if found (or `BOOST_ROOT`), otherwise Boost 1.90 is
+downloaded.
+
+```bash
+git submodule update --init --recursive
+python -m venv .venv
+source .venv/bin/activate
+pip install -v . pytest
+# run the tests from outside the source tree, against the installed package
+cd /tmp && python -m pytest --import-mode=importlib /path/to/QuantLib-Risks-Py/Python/test
+```
+
+Notes:
+
+-   The binary module shares XAD's tape and `Real` type with the
+    [xad](https://pypi.org/project/xad/) package, so `lib/xad` and `lib/pybind11` must be the
+    exact versions xad is built with, and the `xad` requirement is pinned to that XAD
+    major.minor series. Update them together.
+-   `lib/QuantLib` is an unmodified QuantLib release; AAD support comes from QuantLibAAD.
+-   Building QuantLib takes most of the time. To reuse it across builds (e.g. several Python
+    versions), install it once and point the package build at it:
+
+    ```bash
+    cmake -DPREFIX=$PWD/build/quantlib-prefix -P tools/build-quantlib.cmake
+    pip install -v . -Ccmake.define.QLR_QUANTLIB_PREFIX=$PWD/build/quantlib-prefix
+    ```
+
+-   Wheels for all supported Python versions are built with
+    [cibuildwheel](https://cibuildwheel.pypa.io) (`pipx run cibuildwheel`, configured in
+    `pyproject.toml`), the source distribution with `pipx run build --sdist`.
 
 
 [pr]: https://github.com/auto-differentiation/QuantLib-Risks/compare/
