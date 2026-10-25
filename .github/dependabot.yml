@@ -1,6 +1,6 @@
 # Weekly grouped updates for Python deps (pyproject.toml) and GitHub Actions.
-# Submodules (QuantLib, XAD, QuantLibAAD, pybind11) are bumped manually: XAD and
-# pybind11 must match the xad package exactly.
+# Submodules (QuantLib, QuantLibAAD, pybind11) are bumped manually: pybind11 must
+# match the xad package exactly.
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -10,7 +10,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # pinned to the XAD in lib/xad
+      # one major.minor series, bumped manually
       - dependency-name: "xad"
     groups:
       python:
