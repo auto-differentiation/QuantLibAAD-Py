@@ -7,6 +7,14 @@ the underlying QuantLib-SWIG changelog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.41.0] - Unreleased
+
+- Matches QuantLib and QuantLib Python bindings version 1.41
+- Builds against XAD 2.1 and QuantLibAAD 1.41 (formerly QuantLib-Risks-Cpp), requires xad 2.1
+- Builds the unmodified QuantLib 1.41 release, no QuantLib patches
+- One-step build with scikit-build-core; wheels for Python 3.10-3.14 on Linux, macOS and Windows
+- `tools/sync-swig.sh` syncs `SWIG/` with a QuantLib-SWIG release, re-applying the XAD changes in `SWIG/patches/`
+
 ## [1.33.3] - 2024-04-04
 
 - Builds against renamed xad-autodiff -> xad Python package
@@ -22,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release, matching QuantLib Python bindings version 1.33
 
+
+[1.41.0]: https://github.com/auto-differentiation/QuantLib-Risks-Py/compare/v1.33.3...v1.41.0
 
 [1.33.3]: https://github.com/auto-differentiation/QuantLib-Risks-Py/compare/v1.33.2...v1.33.3
 
