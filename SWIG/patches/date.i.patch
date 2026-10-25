@@ -1,0 +1,12 @@
+diff --git a/SWIG/date.i b/SWIG/date.i
+--- a/SWIG/date.i
++++ b/SWIG/date.i
+@@ -922,4 +922,8 @@ struct ASX {
+                                 const Date& referenceDate = Date());
+ };
+ 
++#ifdef QL_XAD
++%include date_extra.i
++#endif
++
+ #endif
