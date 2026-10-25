@@ -33,7 +33,7 @@
 import math
 import unittest
 
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 
 class FdmTest(unittest.TestCase):

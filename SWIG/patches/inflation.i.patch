@@ -6,10 +6,10 @@ diff --git a/SWIG/inflation.i b/SWIG/inflation.i
      """
      if nominalTS is None:
 -        _QuantLib.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation))
-+        _QuantLib_Risks.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib_Risks.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation))
++        _QuantLibAAD.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLibAAD.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation))
      else:
 -        _QuantLib.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation, nominalTS))
-+        _QuantLib_Risks.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib_Risks.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation, nominalTS))
++        _QuantLibAAD.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLibAAD.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation, nominalTS))
  %}
  #endif
    public:

@@ -33,7 +33,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 """
 
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 import unittest
 
 

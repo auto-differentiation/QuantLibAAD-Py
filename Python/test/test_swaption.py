@@ -31,7 +31,7 @@
 """
 
 import unittest
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 
 BASIS_POINT = 1e-4

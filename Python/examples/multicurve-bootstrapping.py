@@ -18,7 +18,7 @@
 #
 # This sample prices a forward-starting interest rate swap on a curve that
 # has been bootrapped on a large number of market quotes. 
-# It calculates all sensitivities using QuantLib-Risks and measures the performance
+# It calculates all sensitivities using QuantLibAAD and measures the performance
 # (averaged over a number of repetitions).
 #
 # Pricing using standard QuantLib can also be done by simply changing the import
@@ -60,7 +60,7 @@
 
 # %%
 
-import QuantLib_Risks as ql  # enable this to calculate sensitivities
+import QuantLibAAD as ql  # enable this to calculate sensitivities
 
 # import QuantLib as ql  # enable this for regular QuantLib performance
 
@@ -578,7 +578,7 @@ N = 20  # iterations to repeat pricing for performance measurements
 
 
 if not getattr(ql, "XAD_ENABLED", False):
-    # ql.XAD_ENABLED is set if we're using QuantLib-Risks
+    # ql.XAD_ENABLED is set if we're using QuantLibAAD
     print("Pricing swap with multicurve bootstrapping without sensitivities...")
     start = time.perf_counter_ns()
     for _ in range(N):

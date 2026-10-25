@@ -33,7 +33,7 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  """
 
 import unittest
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 from xad.adj_1st import Tape
 
 class SwapWithSensiTest(unittest.TestCase):

@@ -32,7 +32,7 @@
 """
 import unittest
 import math
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 class BlackFormulaTest(unittest.TestCase):
 

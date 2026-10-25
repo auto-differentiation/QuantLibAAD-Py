@@ -47,7 +47,7 @@
 
 # ### Setup
 
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 calendar = ql.TARGET()
 

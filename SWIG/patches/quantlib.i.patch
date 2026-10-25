@@ -6,10 +6,10 @@ diff --git a/SWIG/quantlib.i b/SWIG/quantlib.i
  %module(directors="1") NQuantLibc
  #elif defined(SWIGJAVA)
 -%module(directors="1") QuantLib
-+%module(directors="1") QuantLib_Risks
++%module(directors="1") QuantLibAAD
  #else
 -%module QuantLib
-+%module QuantLib_Risks
++%module QuantLibAAD
  #endif
  
  %include exception.i

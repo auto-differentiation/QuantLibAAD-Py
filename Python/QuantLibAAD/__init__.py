@@ -33,16 +33,16 @@
 
 import xad  # loads libxad, which the binary module links against
 
-from .QuantLib_Risks import *
+from .QuantLibAAD import *
 
 if XAD_ENABLED:
     from xad.adj_1st import Real, Tape
     from typing import Union, Tuple, List
 
-    # as part of the input at the top, we'll have _QuantLib_Risks in scope
-    DoubleVector = _QuantLib_Risks.DoubleVector
-    DoublePairVector = _QuantLib_Risks.DoublePairVector
-    DoubleVectorVector = _QuantLib_Risks.DoubleVectorVector
+    # as part of the input at the top, we'll have _QuantLibAAD in scope
+    DoubleVector = _QuantLibAAD.DoubleVector
+    DoublePairVector = _QuantLibAAD.DoublePairVector
+    DoubleVectorVector = _QuantLibAAD.DoubleVectorVector
 
     def Concentrating1dMesherPoint(
         x1: Union[Real, float, int], x2: Union[Real, float, int], v: bool
@@ -54,16 +54,16 @@ if XAD_ENABLED:
     ) -> Tuple[List[Real], List[Real]]:
         return ([Real(x) for x in x1], [Real(x) for x in x2])
 
-if hasattr(_QuantLib_Risks, "__version__"):
-    __version__ = _QuantLib_Risks.__version__
-elif hasattr(_QuantLib_Risks.cvar, "__version__"):
-    __version__ = _QuantLib_Risks.cvar.__version__
+if hasattr(_QuantLibAAD, "__version__"):
+    __version__ = _QuantLibAAD.__version__
+elif hasattr(_QuantLibAAD.cvar, "__version__"):
+    __version__ = _QuantLibAAD.cvar.__version__
 else:
     print("Could not find __version__ attribute")
 
-if hasattr(_QuantLib_Risks, "__hexversion__"):
-    __hexversion__ = _QuantLib_Risks.__hexversion__
-elif hasattr(_QuantLib_Risks.cvar, "__hexversion__"):
-    __hexversion__ = _QuantLib_Risks.cvar.__hexversion__
+if hasattr(_QuantLibAAD, "__hexversion__"):
+    __hexversion__ = _QuantLibAAD.__hexversion__
+elif hasattr(_QuantLibAAD.cvar, "__hexversion__"):
+    __hexversion__ = _QuantLibAAD.cvar.__hexversion__
 else:
     print("Could not find __hexversion__ attribute")

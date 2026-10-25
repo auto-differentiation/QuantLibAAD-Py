@@ -31,7 +31,7 @@ Copyright (C) 2024 Xcelerit Computing Limited.
 """
 
 import unittest
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 class AmericanQuantoOptionTest(unittest.TestCase):
     def setUp(self):

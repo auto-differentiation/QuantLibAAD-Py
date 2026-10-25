@@ -50,7 +50,7 @@
 #    some simple bonds. The last part is dedicated to peripherical
 #    computations such as "Yield to Price" or "Price to Yield"
 
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 import pandas as pd
 
 interactive = 'get_ipython' in globals()

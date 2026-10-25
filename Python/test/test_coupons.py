@@ -16,7 +16,7 @@
 """
 
 import unittest
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 
 
 EPSILON = 1.e-9

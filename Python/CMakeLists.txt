@@ -30,4 +30,4 @@ include(UseSWIG)
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/pybind11 ${CMAKE_BINARY_DIR}/pybind11)
 
-add_subdirectory(QuantLib_Risks)
+add_subdirectory(QuantLibAAD)

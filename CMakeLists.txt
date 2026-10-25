@@ -24,7 +24,7 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 3.18...4.2)
-project(QuantLib_Risks LANGUAGES CXX VERSION 1.41.0)
+project(QuantLibAAD_Py LANGUAGES CXX VERSION 1.41.0)
 
 set(QLR_VERSION ${PROJECT_VERSION})
 set(QLR_HEX_VERSION "0x014100f0")

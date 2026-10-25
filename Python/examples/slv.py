@@ -56,7 +56,7 @@ if sys.version_info.major < 3:
     sys.exit()
 
 # %%
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 from matplotlib import pyplot as plt
 import numpy as np
 from xad import math, value
