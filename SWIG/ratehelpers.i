@@ -12,7 +12,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -46,11 +46,11 @@ using QuantLib::DatedOISRateHelper;
 using QuantLib::FxSwapRateHelper;
 using QuantLib::OvernightIndexFutureRateHelper;
 using QuantLib::SofrFutureRateHelper;
+using QuantLib::ConstNotionalCrossCurrencySwapRateHelper;
 using QuantLib::ConstNotionalCrossCurrencyBasisSwapRateHelper;
 using QuantLib::MtMCrossCurrencyBasisSwapRateHelper;
 using QuantLib::IborIborBasisSwapRateHelper;
 using QuantLib::OvernightIborBasisSwapRateHelper;
-using QuantLib::ArithmeticOISRateHelper;
 %}
 
 struct Pillar {
@@ -95,10 +95,16 @@ class DepositRateHelper : public RateHelper {
                          const ext::shared_ptr<IborIndex>& index);
     DepositRateHelper(Rate rate,
                          const ext::shared_ptr<IborIndex>& index);
+    DepositRateHelper(const Handle<Quote>& rate,
+                      Date fixingDate,
+                      const ext::shared_ptr<IborIndex>& index);
 };
 
 %shared_ptr(FraRateHelper)
 class FraRateHelper : public RateHelper {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") forDates;
+    #endif
   public:
     FraRateHelper(
             const Handle<Quote>& rate,
@@ -162,6 +168,19 @@ class FraRateHelper : public RateHelper {
                   Pillar::Choice pillar = Pillar::LastRelevantDate,
                   Date customPillarDate = Date(),
                   bool useIndexedCoupon = true);
+    %extend {
+        static ext::shared_ptr<FraRateHelper> forDates(
+                const Handle<Quote>& rate,
+                Date startDate,
+                Date endDate,
+                const ext::shared_ptr<IborIndex>& index,
+                Pillar::Choice pillar = Pillar::LastRelevantDate,
+                Date customPillarDate = Date(),
+                bool useIndexedCoupon = true) {
+            return ext::make_shared<FraRateHelper>(
+                rate, startDate, endDate, index, pillar, customPillarDate, useIndexedCoupon);
+        }
+    }
 };
 
 %shared_ptr(FuturesRateHelper)
@@ -213,10 +232,15 @@ class FuturesRateHelper : public RateHelper {
             const ext::shared_ptr<IborIndex>& index,
             Real convexityAdjustment = 0.0,
             Futures::Type type = Futures::IMM);
+
+    Real convexityAdjustment() const;
 };
 
 %shared_ptr(SwapRateHelper)
 class SwapRateHelper : public RateHelper {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") forDates;
+    #endif
   public:
     SwapRateHelper(
             const Handle<Quote>& rate,
@@ -233,7 +257,11 @@ class SwapRateHelper : public RateHelper {
             Pillar::Choice pillar = Pillar::LastRelevantDate,
             Date customPillarDate = Date(),
             bool endOfMonth = false,
-            ext::optional<bool> withIndexedCoupons = ext::nullopt);
+            ext::optional<bool> withIndexedCoupons = ext::nullopt
+    #if defined(SWIGPYTHON)
+            , ext::optional<BusinessDayConvention> floatConvention = ext::nullopt
+    #endif
+    );
     SwapRateHelper(
             Rate rate,
             const Period& tenor,
@@ -249,7 +277,11 @@ class SwapRateHelper : public RateHelper {
             Pillar::Choice pillar = Pillar::LastRelevantDate,
             Date customPillarDate = Date(),
             bool endOfMonth = false,
-            ext::optional<bool> withIndexedCoupons = ext::nullopt);
+            ext::optional<bool> withIndexedCoupons = ext::nullopt
+    #if defined(SWIGPYTHON)
+            , ext::optional<BusinessDayConvention> floatConvention = ext::nullopt
+    #endif
+    );
     SwapRateHelper(
             const Handle<Quote>& rate,
             const ext::shared_ptr<SwapIndex>& index,
@@ -270,6 +302,36 @@ class SwapRateHelper : public RateHelper {
             Date customPillarDate = Date(),
             bool endOfMonth = false,
             ext::optional<bool> withIndexedCoupons = ext::nullopt);
+    %extend {
+        static ext::shared_ptr<SwapRateHelper> forDates(
+                const Handle<Quote>& rate,
+                const Date& startDate,
+                const Date& endDate,
+                Calendar calendar,
+                Frequency fixedFrequency,
+                BusinessDayConvention fixedConvention,
+                DayCounter fixedDayCount,
+                const ext::shared_ptr<IborIndex>& index,
+                const Handle<Quote>& spread = Handle<Quote>(),
+                const Handle<YieldTermStructure>& discountingCurve = {},
+                Pillar::Choice pillar = Pillar::LastRelevantDate,
+                Date customPillarDate = Date(),
+                bool endOfMonth = false,
+                ext::optional<bool> withIndexedCoupons = ext::nullopt
+    #if defined(SWIGPYTHON)
+                , ext::optional<BusinessDayConvention> floatConvention = ext::nullopt
+    #endif
+        ) {
+            return ext::make_shared<SwapRateHelper>(
+                rate, startDate, endDate, std::move(calendar), fixedFrequency,
+                fixedConvention, fixedDayCount, index, spread, discountingCurve,
+                pillar, customPillarDate, endOfMonth, withIndexedCoupons
+    #if defined(SWIGPYTHON)
+                , floatConvention
+    #endif
+            );
+        }
+    }
     Spread spread();
     ext::shared_ptr<VanillaSwap> swap();
 };
@@ -303,8 +365,6 @@ class FixedRateBondHelper : public BondHelper {
                   BusinessDayConvention exCouponConvention = Unadjusted,
                   bool exCouponEndOfMonth = false,
                   BondPrice::Type priceType = BondPrice::Clean);
-
-    ext::shared_ptr<FixedRateBond> fixedRateBond();
 };
 
 
@@ -312,8 +372,71 @@ class FixedRateBondHelper : public BondHelper {
 class OISRateHelper : public RateHelper {
     #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
     %feature("kwargs") OISRateHelper;
+    %feature("kwargs") forDates;
     #endif
   public:
+    #if defined(SWIGPYTHON)
+    OISRateHelper(
+            Natural settlementDays,
+            const Period& tenor,
+            const std::variant<Real, Handle<Quote>>& rate,
+            const ext::shared_ptr<OvernightIndex>& index,
+            const Handle<YieldTermStructure>& discountingCurve = {},
+            bool telescopicValueDates = false,
+            Integer paymentLag = 0,
+            BusinessDayConvention paymentConvention = Following,
+            Frequency paymentFrequency = Annual,
+            const Calendar& paymentCalendar = Calendar(),
+            const Period& forwardStart = 0 * Days,
+            const Spread overnightSpread = 0.0,
+            Pillar::Choice pillar = Pillar::LastRelevantDate,
+            Date customPillarDate = Date(),
+            RateAveraging::Type averagingMethod = RateAveraging::Compound,
+            ext::optional<bool> endOfMonth = ext::nullopt,
+            ext::optional<Frequency> fixedPaymentFrequency = ext::nullopt,
+            const Calendar& fixedCalendar = Calendar(),
+            Natural lookbackDays = Null<Natural>(),
+            Natural lockoutDays = 0,
+            bool applyObservationShift = false,
+            const ext::shared_ptr<FloatingRateCouponPricer>& pricer = {},
+            DateGeneration::Rule rule = DateGeneration::Backward,
+            const Calendar& overnightCalendar = Calendar(),
+            BusinessDayConvention convention = ModifiedFollowing);
+    %extend {
+        static ext::shared_ptr<OISRateHelper> forDates(
+                const Date& startDate,
+                const Date& endDate,
+                const std::variant<Real, Handle<Quote>>& rate,
+                const ext::shared_ptr<OvernightIndex>& index,
+                const Handle<YieldTermStructure>& discountingCurve = {},
+                bool telescopicValueDates = false,
+                Integer paymentLag = 0,
+                BusinessDayConvention paymentConvention = Following,
+                Frequency paymentFrequency = Annual,
+                const Calendar& paymentCalendar = Calendar(),
+                Spread overnightSpread = 0.0,
+                Pillar::Choice pillar = Pillar::LastRelevantDate,
+                Date customPillarDate = Date(),
+                RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                ext::optional<bool> endOfMonth = ext::nullopt,
+                ext::optional<Frequency> fixedPaymentFrequency = ext::nullopt,
+                const Calendar& fixedCalendar = Calendar(),
+                Natural lookbackDays = Null<Natural>(),
+                Natural lockoutDays = 0,
+                bool applyObservationShift = false,
+                const ext::shared_ptr<FloatingRateCouponPricer>& pricer = {},
+                DateGeneration::Rule rule = DateGeneration::Backward,
+                const Calendar& overnightCalendar = Calendar(),
+                BusinessDayConvention convention = ModifiedFollowing) {
+            return ext::make_shared<OISRateHelper>(
+                startDate, endDate, rate, index, discountingCurve,
+                telescopicValueDates, paymentLag, paymentConvention, paymentFrequency,
+                paymentCalendar, overnightSpread, pillar, customPillarDate, averagingMethod,
+                endOfMonth, fixedPaymentFrequency, fixedCalendar, lookbackDays, lockoutDays,
+                applyObservationShift, pricer, rule, overnightCalendar, convention);
+        }
+    }
+    #else
     OISRateHelper(
             Natural settlementDays,
             const Period& tenor,
@@ -332,7 +455,49 @@ class OISRateHelper : public RateHelper {
             RateAveraging::Type averagingMethod = RateAveraging::Compound,
             ext::optional<bool> endOfMonth = ext::nullopt,
             ext::optional<Frequency> fixedPaymentFrequency = ext::nullopt,
-            const Calendar& fixedCalendar = Calendar());
+            const Calendar& fixedCalendar = Calendar(),
+            Natural lookbackDays = Null<Natural>(),
+            Natural lockoutDays = 0,
+            bool applyObservationShift = false,
+            const ext::shared_ptr<FloatingRateCouponPricer>& pricer = {},
+            DateGeneration::Rule rule = DateGeneration::Backward,
+            const Calendar& overnightCalendar = Calendar(),
+            BusinessDayConvention convention = ModifiedFollowing);
+    %extend {
+        static ext::shared_ptr<OISRateHelper> forDates(
+                const Date& startDate,
+                const Date& endDate,
+                const Handle<Quote>& rate,
+                const ext::shared_ptr<OvernightIndex>& index,
+                const Handle<YieldTermStructure>& discountingCurve = {},
+                bool telescopicValueDates = false,
+                Integer paymentLag = 0,
+                BusinessDayConvention paymentConvention = Following,
+                Frequency paymentFrequency = Annual,
+                const Calendar& paymentCalendar = Calendar(),
+                Spread overnightSpread = 0.0,
+                Pillar::Choice pillar = Pillar::LastRelevantDate,
+                Date customPillarDate = Date(),
+                RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                ext::optional<bool> endOfMonth = ext::nullopt,
+                ext::optional<Frequency> fixedPaymentFrequency = ext::nullopt,
+                const Calendar& fixedCalendar = Calendar(),
+                Natural lookbackDays = Null<Natural>(),
+                Natural lockoutDays = 0,
+                bool applyObservationShift = false,
+                const ext::shared_ptr<FloatingRateCouponPricer>& pricer = {},
+                DateGeneration::Rule rule = DateGeneration::Backward,
+                const Calendar& overnightCalendar = Calendar(),
+                BusinessDayConvention convention = ModifiedFollowing) {
+            return ext::make_shared<OISRateHelper>(
+                startDate, endDate, rate, index, discountingCurve,
+                telescopicValueDates, paymentLag, paymentConvention, paymentFrequency,
+                paymentCalendar, overnightSpread, pillar, customPillarDate, averagingMethod,
+                endOfMonth, fixedPaymentFrequency, fixedCalendar, lookbackDays, lockoutDays,
+                applyObservationShift, pricer, rule, overnightCalendar, convention);
+        }
+    }
+    #endif
     ext::shared_ptr<OvernightIndexedSwap> swap();
 };
 
@@ -354,15 +519,22 @@ class DatedOISRateHelper : public RateHelper {
             BusinessDayConvention paymentConvention = Following,
             Frequency paymentFrequency = Annual,
             const Calendar& paymentCalendar = Calendar(),
-            const Period& forwardStart = 0 * Days,
             Spread overnightSpread = 0.0,
             ext::optional<bool> endOfMonth = ext::nullopt,
             ext::optional<Frequency> fixedPaymentFrequency = ext::nullopt,
-            const Calendar& fixedCalendar = Calendar());
+            const Calendar& fixedCalendar = Calendar(),
+            Natural lookbackDays = Null<Natural>(),
+            Natural lockoutDays = 0,
+            bool applyObservationShift = false,
+            const ext::shared_ptr<FloatingRateCouponPricer>& pricer = {});
+    ext::shared_ptr<OvernightIndexedSwap> swap();
 };
 
 %shared_ptr(FxSwapRateHelper)
 class FxSwapRateHelper : public RateHelper {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") forDates;
+    #endif
   public:
     FxSwapRateHelper(
             const Handle<Quote>& fwdPoint,
@@ -375,6 +547,28 @@ class FxSwapRateHelper : public RateHelper {
             bool isFxBaseCurrencyCollateralCurrency,
             const Handle<YieldTermStructure>& collateralCurve,
             const Calendar& tradingCalendar = Calendar());
+    %extend {
+        static ext::shared_ptr<FxSwapRateHelper> forDates(
+                const Handle<Quote>& fwdPoint,
+                const Handle<Quote>& spotFx,
+                const Date& startDate,
+                const Date& endDate,
+                bool isFxBaseCurrencyCollateralCurrency,
+                const Handle<YieldTermStructure>& collateralCurve) {
+            return ext::make_shared<FxSwapRateHelper>(
+                fwdPoint, spotFx, startDate, endDate, isFxBaseCurrencyCollateralCurrency,
+                collateralCurve);
+        }
+    }
+    Real spot() const;
+    Period tenor() const;
+    Natural fixingDays() const;
+    Calendar calendar() const;
+    BusinessDayConvention businessDayConvention() const;
+    bool endOfMonth() const;
+    bool isFxBaseCurrencyCollateralCurrency() const;
+    Calendar tradingCalendar() const;
+    Calendar adjustmentCalendar() const;
 };
 
 %shared_ptr(OvernightIndexFutureRateHelper)
@@ -387,6 +581,8 @@ class OvernightIndexFutureRateHelper : public RateHelper {
             const ext::shared_ptr<OvernightIndex>& index,
             const Handle<Quote>& convexityAdjustment = Handle<Quote>(), 
             RateAveraging::Type averagingMethod = RateAveraging::Compound);
+
+    Real convexityAdjustment() const;
 };
 
 %shared_ptr(SofrFutureRateHelper)
@@ -405,6 +601,23 @@ class SofrFutureRateHelper : public OvernightIndexFutureRateHelper {
                          Real convexityAdjustment = 0.0);
 };
 
+%shared_ptr(ConstNotionalCrossCurrencySwapRateHelper)
+class ConstNotionalCrossCurrencySwapRateHelper : public RateHelper {
+  public:
+    ConstNotionalCrossCurrencySwapRateHelper(const Handle<Quote>& fixedRate,
+                                             const Period& tenor,
+                                             Natural fixingDays,
+                                             Calendar calendar,
+                                             BusinessDayConvention convention,
+                                             bool endOfMonth,
+                                             Frequency fixedFrequency,
+                                             const DayCounter& fixedDayCount,
+                                             ext::shared_ptr<IborIndex> floatIndex,
+                                             Handle<YieldTermStructure> collateralCurve,
+                                             bool collateralOnFixedLeg,
+                                             Integer paymentLag = 0);
+};
+
 %shared_ptr(ConstNotionalCrossCurrencyBasisSwapRateHelper)
 class ConstNotionalCrossCurrencyBasisSwapRateHelper : public RateHelper {
   public:
@@ -418,7 +631,9 @@ class ConstNotionalCrossCurrencyBasisSwapRateHelper : public RateHelper {
                                                   ext::shared_ptr<IborIndex> quoteCurrencyIndex,
                                                   Handle<YieldTermStructure> collateralCurve,
                                                   bool isFxBaseCurrencyCollateralCurrency,
-                                                  bool isBasisOnFxBaseCurrencyLeg);
+                                                  bool isBasisOnFxBaseCurrencyLeg,
+                                                  Frequency paymentFrequency = NoFrequency,
+                                                  Integer paymentLag = 0);
 };
 
 %shared_ptr(MtMCrossCurrencyBasisSwapRateHelper)
@@ -435,7 +650,9 @@ class MtMCrossCurrencyBasisSwapRateHelper : public RateHelper {
                                         Handle<YieldTermStructure> collateralCurve,
                                         bool isFxBaseCurrencyCollateralCurrency,
                                         bool isBasisOnFxBaseCurrencyLeg,
-                                        bool isFxBaseCurrencyLegResettable);
+                                        bool isFxBaseCurrencyLegResettable,
+                                        Frequency paymentFrequency = NoFrequency,
+                                        Integer paymentLag = 0);
 };
 
 %shared_ptr(IborIborBasisSwapRateHelper)
@@ -451,6 +668,7 @@ class IborIborBasisSwapRateHelper : public RateHelper {
                                 const ext::shared_ptr<IborIndex>& otherIndex,
                                 Handle<YieldTermStructure> discountHandle,
                                 bool bootstrapBaseCurve);
+    ext::shared_ptr<Swap> swap();
 };
 
 %shared_ptr(OvernightIborBasisSwapRateHelper)
@@ -465,26 +683,7 @@ class OvernightIborBasisSwapRateHelper : public RateHelper {
                                      const ext::shared_ptr<OvernightIndex>& baseIndex,
                                      const ext::shared_ptr<IborIndex>& otherIndex,
                                      Handle<YieldTermStructure> discountHandle = Handle<YieldTermStructure>());
-};
-
-%shared_ptr(ArithmeticOISRateHelper)
-class ArithmeticOISRateHelper : public RateHelper {
-  public:
-    ArithmeticOISRateHelper(
-        Natural settlementDays,
-        const Period& tenor, // swap maturity
-        Frequency fixedLegPaymentFrequency,
-        const Handle<Quote>& fixedRate,
-        ext::shared_ptr<OvernightIndex> overnightIndex,
-        Frequency overnightLegPaymentFrequency,
-        Handle<Quote> spread,
-        Real meanReversionSpeed = 0.03,
-        Real volatility = 0.00, // NO convexity adjustment by default
-        bool byApprox = false,  // TRUE to use Katsumi Takada approximation
-        // exogenous discounting curve
-        Handle<YieldTermStructure> discountingCurve = Handle<YieldTermStructure>());
-
-    ext::shared_ptr<ArithmeticAverageOIS> swap() const;
+    ext::shared_ptr<Swap> swap();
 };
 
 // allow use of RateHelper vectors

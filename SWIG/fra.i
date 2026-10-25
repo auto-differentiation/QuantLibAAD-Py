@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -37,22 +37,6 @@ struct Position {
 %shared_ptr(ForwardRateAgreement)
 class ForwardRateAgreement : public Instrument {
   public:
-    ForwardRateAgreement(const Date& valueDate,
-                         const Date& maturityDate,
-                         Position::Type type,
-                         Rate strikeForwardRate,
-                         Real notionalAmount,
-                         const ext::shared_ptr<IborIndex>& index,
-                         const Handle<YieldTermStructure>& discountCurve = Handle<YieldTermStructure>(),
-                         bool useIndexedCoupon = true);
-
-    ForwardRateAgreement(const Date& valueDate,
-                         Position::Type type,
-                         Rate strikeForwardRate,
-                         Real notionalAmount,
-                         const ext::shared_ptr<IborIndex>& index,
-                         const Handle<YieldTermStructure>& discountCurve = Handle<YieldTermStructure>());
-
     ForwardRateAgreement(const ext::shared_ptr<IborIndex>& index,
                          const Date& valueDate,
                          Position::Type type,

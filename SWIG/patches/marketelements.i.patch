@@ -1,0 +1,54 @@
+diff --git a/SWIG/marketelements.i b/SWIG/marketelements.i
+--- a/SWIG/marketelements.i
++++ b/SWIG/marketelements.i
+@@ -50,10 +50,14 @@ RelinkableHandle<Quote> makeQuoteHandle(Real value);
+ #if defined(SWIGPYTHON)
+ 
+ %typecheck(SWIG_TYPECHECK_DOUBLE) std::variant<Real, Handle<Quote>>, const std::variant<Real, Handle<Quote>>& %{
++#ifdef QL_XAD
++    $1 = (PyFloat_Check($input) || PyLong_Check($input) || check_Real($input)) ? 1 : 0;
++#else
+     {
+         int res = SWIG_AsVal_double($input, NULL);
+         $1 = SWIG_CheckState(res);
+     }
++#endif
+     if (!$1) {
+         int res = SWIG_ConvertPtr($input, 0, $descriptor(Handle<Quote>*), SWIG_POINTER_NO_NULL | 0);
+         $1 = SWIG_CheckState(res);;
+@@ -61,10 +65,16 @@ RelinkableHandle<Quote> makeQuoteHandle(Real value);
+ %}
+ 
+ %typemap(in) std::variant<Real, Handle<Quote>> (int res, Real val, void * argp) %{
++#ifdef QL_XAD
++    if (PyFloat_Check($input) || PyLong_Check($input) || check_Real($input)) {
++        $1 = make_Real($input);
++    } else {
++#else
+     res = SWIG_AsVal_double($input, &val);
+     if (SWIG_IsOK(res)) {
+         $1 = val;
+     } else {
++#endif
+         res = SWIG_ConvertPtr($input, &argp, $descriptor(Handle<Quote>*), SWIG_POINTER_NO_NULL);
+         if (!SWIG_IsOK(res)) {
+             SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");
+@@ -79,11 +89,18 @@ RelinkableHandle<Quote> makeQuoteHandle(Real value);
+ %}
+ 
+ %typemap(in) const std::variant<Real, Handle<Quote>>& (std::variant<Real, Handle<Quote>> temp, int res, Real val, void * argp) %{
++#ifdef QL_XAD
++    if (PyFloat_Check($input) || PyLong_Check($input) || check_Real($input)) {
++        temp = make_Real($input);
++        $1 = &temp;
++    } else {
++#else
+     res = SWIG_AsVal_double($input, &val);
+     if (SWIG_IsOK(res)) {
+         temp = val;
+         $1 = &temp;
+     } else {
++#endif
+         res = SWIG_ConvertPtr($input, &argp, $descriptor(Handle<Quote>*), SWIG_POINTER_NO_NULL);
+         if (!SWIG_IsOK(res)) {
+             SWIG_exception_fail(SWIG_ArgError(res), "in method '$symname', argument $argnum of type '$type'");

@@ -1,7 +1,7 @@
 diff --git a/SWIG/timebasket.i b/SWIG/timebasket.i
 --- a/SWIG/timebasket.i
 +++ b/SWIG/timebasket.i
-@@ -54,7 +54,11 @@ class TimeBasket {
+@@ -55,7 +55,11 @@ class TimeBasket {
                  PyTuple_SetItem(item,0,
                                  SWIG_NewPointerObj((void *) d,
                                                     $descriptor(Date *),1));
@@ -10,6 +10,6 @@ diff --git a/SWIG/timebasket.i b/SWIG/timebasket.i
 +#else
                  PyTuple_SetItem(item,1,PyFloat_FromDouble(i->second));
 +#endif
-                 PyList_SetItem(itemList,j,item);
+                 PyList_SetItem(itemList.get(),j,item);
              }
-             return itemList;
+             return itemList.release();

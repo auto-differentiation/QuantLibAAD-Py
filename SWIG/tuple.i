@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -23,7 +23,8 @@
 
 %include common.i
 
-namespace ext {
+namespace std {
+
   template <typename T1=void, typename T2=void, typename T3=void>
   struct tuple;
 
@@ -36,7 +37,7 @@ namespace ext {
     tuple(T1);
     %extend {
       T1 first() const {
-        return ext::get<0>(*$self);
+        return std::get<0>(*$self);
       }
     }
   };
@@ -46,10 +47,10 @@ namespace ext {
     tuple(T1,T2);
     %extend {
       T1 first() const {
-        return ext::get<0>(*$self);
+        return std::get<0>(*$self);
       }
       T2 second() const {
-        return ext::get<1>(*$self);
+        return std::get<1>(*$self);
       }
     }
   };
@@ -59,16 +60,17 @@ namespace ext {
     tuple(T1,T2,T3);
     %extend {
       T1 first() const {
-        return ext::get<0>(*$self);
+        return std::get<0>(*$self);
       }
       T2 second() const {
-        return ext::get<1>(*$self);
+        return std::get<1>(*$self);
       }
       T3 third() const {
-        return ext::get<2>(*$self);
+        return std::get<2>(*$self);
       }
     }
   };
+
 }
 
 #endif

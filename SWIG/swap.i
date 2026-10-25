@@ -15,7 +15,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -34,6 +34,7 @@
 
 %{
 using QuantLib::Swap;
+using QuantLib::FixedVsFloatingSwap;
 using QuantLib::VanillaSwap;
 using QuantLib::MakeVanillaSwap;
 using QuantLib::NonstandardSwap;
@@ -43,7 +44,6 @@ using QuantLib::OvernightIndexedSwap;
 using QuantLib::MakeOIS;
 using QuantLib::ZeroCouponSwap;
 using QuantLib::EquityTotalReturnSwap;
-using QuantLib::ArithmeticAverageOIS;
 using QuantLib::simplifyNotificationGraph;
 %}
 
@@ -71,9 +71,57 @@ class Swap : public Instrument {
 void simplifyNotificationGraph(Swap& swap, bool unregisterCoupons = false);
 
 
-%shared_ptr(VanillaSwap)
-class VanillaSwap : public Swap {
+%shared_ptr(FixedVsFloatingSwap)
+class FixedVsFloatingSwap : public Swap {
+  private:
+    FixedVsFloatingSwap();
   public:
+    Type type();
+    Real nominal();
+    std::vector<Real> nominals();
+
+    std::vector<Real> fixedNominals();
+    const Schedule& fixedSchedule();
+    Rate fixedRate();
+    const DayCounter& fixedDayCount();
+
+    std::vector<Real> floatingNominals();
+    const Schedule& floatingSchedule();
+    const ext::shared_ptr<IborIndex>& iborIndex();
+    Spread spread();
+    const DayCounter& floatingDayCount();
+
+    BusinessDayConvention paymentConvention() const;
+
+    const Leg& fixedLeg();
+    const Leg& floatingLeg();
+
+    Real fixedLegBPS();
+    Real fixedLegNPV();
+    Rate fairRate();
+
+    Real floatingLegBPS();
+    Real floatingLegNPV();
+    Spread fairSpread();
+};
+
+%shared_ptr(VanillaSwap)
+class VanillaSwap : public FixedVsFloatingSwap {
+  public:
+    #if defined(SWIGPYTHON)
+    %feature("kwargs") VanillaSwap;
+    VanillaSwap(Type type,
+                Real nominal,
+                const Schedule& fixedSchedule,
+                Rate fixedRate,
+                const DayCounter& fixedDayCount,
+                const Schedule& floatSchedule,
+                const ext::shared_ptr<IborIndex>& index,
+                Spread spread,
+                const DayCounter& floatingDayCount,
+                ext::optional<BusinessDayConvention> paymentConvention = ext::nullopt,
+                ext::optional<bool> withIndexedCoupons = ext::nullopt);
+    #else
     %extend {
         VanillaSwap(Type type, Real nominal,
                     const Schedule& fixedSchedule, Rate fixedRate,
@@ -91,29 +139,16 @@ class VanillaSwap : public Swap {
                                    paymentConvention, withIndexedCoupons);
         }
     }
-    Type type() const;
-    Rate fairRate();
-    Spread fairSpread();
-    Real fixedLegBPS();
-    Real floatingLegBPS();
-    Real fixedLegNPV();
-    Real floatingLegNPV();
-    // Inspectors 
-    const Leg& fixedLeg();
-    const Leg& floatingLeg();
-    Real nominal();
-    const Schedule& fixedSchedule();
-    const Schedule& floatingSchedule();
-    Rate fixedRate();
-    Spread spread();
-    const DayCounter& floatingDayCount();
-    const DayCounter& fixedDayCount();
+    #endif
 };
 
 #if defined(SWIGPYTHON)
 %rename (_MakeVanillaSwap) MakeVanillaSwap;
 #endif
 class MakeVanillaSwap {
+        #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+        %feature("kwargs") MakeVanillaSwap;
+        #endif
       public:
         MakeVanillaSwap& receiveFixed(bool flag = true);
         MakeVanillaSwap& withType(Swap::Type type);
@@ -123,6 +158,7 @@ class MakeVanillaSwap {
         MakeVanillaSwap& withEffectiveDate(const Date&);
         MakeVanillaSwap& withTerminationDate(const Date&);
         MakeVanillaSwap& withRule(DateGeneration::Rule r);
+        MakeVanillaSwap& withPaymentConvention(BusinessDayConvention bdc);
 
         MakeVanillaSwap& withFixedLegTenor(const Period& t);
         MakeVanillaSwap& withFixedLegCalendar(const Calendar& cal);
@@ -157,90 +193,65 @@ class MakeVanillaSwap {
 
         MakeVanillaSwap(const Period& swapTenor,
                         const ext::shared_ptr<IborIndex>& index,
-                        Rate fixedRate,
-                        const Period& forwardStart);
+                        doubleOrNull fixedRate = Null<Rate>(),
+                        const Period& forwardStart = 0*Days);
         
-        %extend{
-            ext::shared_ptr<VanillaSwap> makeVanillaSwap(){
+        %extend {
+            ext::shared_ptr<VanillaSwap> makeVanillaSwap() {
                 return (ext::shared_ptr<VanillaSwap>)(* $self);
             }
         }
 };
 
 #if defined(SWIGPYTHON)
-%pythoncode{
-def MakeVanillaSwap(swapTenor, iborIndex, fixedRate, forwardStart,
-    receiveFixed=None, swapType=None, Nominal=None, settlementDays=None,
-    effectiveDate=None, terminationDate=None, dateGenerationRule=None,
-    fixedLegTenor=None, fixedLegCalendar=None, fixedLegConvention=None,
-    fixedLegDayCount=None, floatingLegTenor=None, floatingLegCalendar=None,
-    floatingLegConvention=None, floatingLegDayCount=None, floatingLegSpread=None,
-    discountingTermStructure=None, pricingEngine=None,
-    fixedLegTerminationDateConvention=None,  fixedLegDateGenRule=None,
-    fixedLegEndOfMonth=None, fixedLegFirstDate=None, fixedLegNextToLastDate=None,
-    floatingLegTerminationDateConvention=None, floatingLegDateGenRule=None,
-    floatingLegEndOfMonth=None, floatingLegFirstDate=None, floatingLegNextToLastDate=None,
-    withIndexedCoupons=None):
+%pythoncode {
+_MAKEVANILLA_METHODS = {
+    "receiveFixed": "receiveFixed",
+    "swapType": "withType",
+    "nominal": "withNominal",
+    "settlementDays": "withSettlementDays",
+    "effectiveDate": "withEffectiveDate",
+    "terminationDate": "withTerminationDate",
+    "dateGenerationRule": "withRule",
+    "paymentConvention": "withPaymentConvention",
+    "fixedLegTenor": "withFixedLegTenor",
+    "fixedLegCalendar": "withFixedLegCalendar",
+    "fixedLegConvention": "withFixedLegConvention",
+    "fixedLegTerminationDateConvention": "withFixedLegTerminationDateConvention",
+    "fixedLegDateGenRule": "withFixedLegRule",
+    "fixedLegEndOfMonth": "withFixedLegEndOfMonth",
+    "fixedLegFirstDate": "withFixedLegFirstDate",
+    "fixedLegNextToLastDate": "withFixedLegNextToLastDate",
+    "fixedLegDayCount": "withFixedLegDayCount",
+    "floatingLegTenor": "withFloatingLegTenor",
+    "floatingLegCalendar": "withFloatingLegCalendar",
+    "floatingLegConvention": "withFloatingLegConvention",
+    "floatingLegTerminationDateConvention": "withFloatingLegTerminationDateConvention",
+    "floatingLegDateGenRule": "withFloatingLegRule",
+    "floatingLegEndOfMonth": "withFloatingLegEndOfMonth",
+    "floatingLegFirstDate": "withFloatingLegFirstDate",
+    "floatingLegNextToLastDate": "withFloatingLegNextToLastDate",
+    "floatingLegDayCount": "withFloatingLegDayCount",
+    "floatingLegSpread": "withFloatingLegSpread",
+    "discountingTermStructure": "withDiscountingTermStructure",
+    "pricingEngine": "withPricingEngine",
+    "withIndexedCoupons": "withIndexedCoupons",
+    "atParCoupons": "withAtParCoupons",
+}
+
+def MakeVanillaSwap(swapTenor, iborIndex, fixedRate=None, forwardStart=Period(0, Days), **kwargs):
     mv = _MakeVanillaSwap(swapTenor, iborIndex, fixedRate, forwardStart)
-    if receiveFixed is not None:
-        mv.receiveFixed(receiveFixed)
-    if swapType is not None:
-        mv.withType(swapType)
-    if Nominal is not None:
-        mv.withNominal(Nominal)
-    if settlementDays is not None:
-        mv.withSettlementDays(settlementDays)
-    if effectiveDate is not None:
-        mv.withEffectiveDate(effectiveDate)
-    if terminationDate is not None:
-        mv.withTerminationDate(terminationDate)
-    if dateGenerationRule is not None:
-        mv.withRule(dateGenerationRule)
-    if fixedLegTenor is not None:
-        mv.withFixedLegTenor(fixedLegTenor)
-    if fixedLegCalendar is not None:
-        mv.withFixedLegCalendar(fixedLegCalendar)
-    if fixedLegConvention is not None:
-        mv.withFixedLegConvention(fixedLegConvention)
-    if fixedLegDayCount is not None:
-        mv.withFixedLegDayCount(fixedLegDayCount)
-    if floatingLegTenor is not None:
-        mv.withFloatingLegTenor(floatingLegTenor)
-    if floatingLegCalendar is not None:
-        mv.withFloatingLegCalendar(floatingLegCalendar)
-    if floatingLegConvention is not None:
-        mv.withFloatingLegConvention(floatingLegConvention)
-    if floatingLegDayCount is not None:
-        mv.withFloatingLegDayCount(floatingLegDayCount)
-    if floatingLegSpread is not None:
-        mv.withFloatingLegSpread(floatingLegSpread)
-    if discountingTermStructure is not None:
-        mv.withDiscountingTermStructure(discountingTermStructure)
-    if pricingEngine is not None:
-        mv.withPricingEngine(pricingEngine)
-    if fixedLegTerminationDateConvention is not None:
-        mv.withFixedLegTerminationDateConvention(fixedLegTerminationDateConvention)
-    if fixedLegDateGenRule is not None:
-        mv.withFixedLegRule(fixedLegDateGenRule)
-    if fixedLegEndOfMonth is not None:
-        mv.withFixedLegEndOfMonth(fixedLegEndOfMonth)
-    if fixedLegFirstDate is not None:
-        mv.withFixedLegFirstDate(fixedLegFirstDate)
-    if fixedLegNextToLastDate is not None:
-        mv.withFixedLegNextToLastDate(fixedLegNextToLastDate)
-    if floatingLegTerminationDateConvention is not None:
-        mv.withFloatingLegTerminationDateConvention(floatingLegTerminationDateConvention)
-    if floatingLegDateGenRule is not None:
-        mv.withFloatingLegRule(floatingLegDateGenRule)
-    if floatingLegEndOfMonth is not None:
-        mv.withFloatingLegEndOfMonth(floatingLegEndOfMonth)
-    if floatingLegFirstDate is not None:
-        mv.withFloatingLegFirstDate(floatingLegFirstDate)
-    if floatingLegNextToLastDate is not None:
-        mv.withFloatingLegNextToLastDate(floatingLegNextToLastDate)
-    if withIndexedCoupons is not None:
-        mv.withIndexedCoupons(withIndexedCoupons)
+    _apply_kwargs("MakeVanillaSwap", _MAKEVANILLA_METHODS, mv, kwargs)
     return mv.makeVanillaSwap()
+
+def _apply_kwargs(func_name, method_map, mv, attrs):
+    for name, value in attrs.items():
+        try:
+            method = method_map[name]
+        except KeyError:
+            raise TypeError(f"{func_name}() got an unexpected keyword argument {name!r}") from None
+        if value is not None:
+            getattr(mv, method)(value)
 }
 #endif
 
@@ -316,13 +327,16 @@ class AssetSwap : public Swap {
     #endif
   public:
     AssetSwap(bool payFixedRate,
-                 const ext::shared_ptr<Bond>& bond,
-                 Real bondCleanPrice,
-                 const ext::shared_ptr<IborIndex>& index,
-                 Spread spread,
-                 const Schedule& floatSchedule = Schedule(),
-                 const DayCounter& floatingDayCount = DayCounter(),
-                 bool parAssetSwap = true);
+              const ext::shared_ptr<Bond>& bond,
+              Real bondCleanPrice,
+              const ext::shared_ptr<IborIndex>& index,
+              Spread spread,
+              const Schedule& floatSchedule = Schedule(),
+              const DayCounter& floatingDayCount = DayCounter(),
+              bool parAssetSwap = true,
+              Real gearing = 1.0,
+              Real nonParRepayment = Null<Real>(),
+              Date dealMaturity = Date());
     Real fairCleanPrice();
     Spread fairSpread();
 };
@@ -351,7 +365,7 @@ class FloatFloatSwap : public Swap {
 };
 
 %shared_ptr(OvernightIndexedSwap)
-class OvernightIndexedSwap : public Swap {
+class OvernightIndexedSwap : public FixedVsFloatingSwap {
   public:
     OvernightIndexedSwap(
             Type type,
@@ -365,7 +379,10 @@ class OvernightIndexedSwap : public Swap {
             BusinessDayConvention paymentAdjustment = Following,
             Calendar paymentCalendar = Calendar(),
             bool telescopicValueDates = false,
-            RateAveraging::Type averagingMethod = RateAveraging::Compound);
+            RateAveraging::Type averagingMethod = RateAveraging::Compound,
+            Natural lookbackDays = Null<Natural>(),
+            Natural lockoutDays = 0,
+            bool applyObservationShift = false);
     
     OvernightIndexedSwap(
             Type type,
@@ -379,7 +396,10 @@ class OvernightIndexedSwap : public Swap {
             BusinessDayConvention paymentAdjustment = Following,
             Calendar paymentCalendar = Calendar(),
             bool telescopicValueDates = false,
-            RateAveraging::Type averagingMethod = RateAveraging::Compound);
+            RateAveraging::Type averagingMethod = RateAveraging::Compound,
+            Natural lookbackDays = Null<Natural>(),
+            Natural lockoutDays = 0,
+            bool applyObservationShift = false);
 
     OvernightIndexedSwap(Type type,
                          const std::vector<Real>& fixedNominals,
@@ -394,40 +414,38 @@ class OvernightIndexedSwap : public Swap {
                          BusinessDayConvention paymentAdjustment = Following,
                          const Calendar& paymentCalendar = Calendar(),
                          bool telescopicValueDates = false,
-                         RateAveraging::Type averagingMethod = RateAveraging::Compound);
+                         RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                         Natural lookbackDays = Null<Natural>(),
+                         Natural lockoutDays = 0,
+                         bool applyObservationShift = false);
 
-    Rate fixedLegBPS();
-    Real fixedLegNPV();
-    Real fairRate();
     Real overnightLegBPS();
     Real overnightLegNPV();
-    Spread fairSpread();
     // Inspectors
-    Type type();
-    Real nominal();
-    std::vector<Real> nominals();
     Frequency paymentFrequency();
-    Rate fixedRate();
-    const DayCounter& fixedDayCount();
     ext::shared_ptr<OvernightIndex> overnightIndex() const;
-    Spread spread();
-    const Leg& fixedLeg();
     const Leg& overnightLeg();
     RateAveraging::Type averagingMethod();
+    Natural lookbackDays() const;
+    Natural lockoutDays() const;
+    bool applyObservationShift() const;
 };
 
 #if defined(SWIGPYTHON)
 %rename (_MakeOIS) MakeOIS;
 #endif
 class MakeOIS {
+        #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+        %feature("kwargs") MakeOIS;
+        #endif
       public:
         MakeOIS(const Period& swapTenor,
                 const ext::shared_ptr<OvernightIndex>& overnightIndex,
-                Rate fixedRate = Null<Rate>(),
+                doubleOrNull fixedRate = Null<Rate>(),
                 const Period& fwdStart = 0*Days);
 
-        %extend{
-            ext::shared_ptr<OvernightIndexedSwap> makeOIS(){
+        %extend {
+            ext::shared_ptr<OvernightIndexedSwap> makeOIS() {
                 return (ext::shared_ptr<OvernightIndexedSwap>)(* $self);
             }
         }
@@ -439,84 +457,83 @@ class MakeOIS {
         MakeOIS& withEffectiveDate(const Date&);
         MakeOIS& withTerminationDate(const Date&);
         MakeOIS& withRule(DateGeneration::Rule r);
+        MakeOIS& withFixedLegRule(DateGeneration::Rule r);
+        MakeOIS& withOvernightLegRule(DateGeneration::Rule r);
         MakeOIS& withPaymentFrequency(Frequency f);
+        MakeOIS& withFixedLegPaymentFrequency(Frequency f);
+        MakeOIS& withOvernightLegPaymentFrequency(Frequency f);
         MakeOIS& withPaymentAdjustment(BusinessDayConvention convention);
         MakeOIS& withPaymentLag(Integer lag);
         MakeOIS& withPaymentCalendar(const Calendar& cal);
+        MakeOIS& withCalendar(const Calendar& cal);
+        MakeOIS& withFixedLegCalendar(const Calendar& cal);
+        MakeOIS& withOvernightLegCalendar(const Calendar& cal);
+        MakeOIS& withConvention(BusinessDayConvention bdc);
+        MakeOIS& withFixedLegConvention(BusinessDayConvention bdc);
+        MakeOIS& withOvernightLegConvention(BusinessDayConvention bdc);
+        MakeOIS& withTerminationDateConvention(BusinessDayConvention bdc);
+        MakeOIS& withFixedLegTerminationDateConvention(BusinessDayConvention bdc);
+        MakeOIS& withOvernightLegTerminationDateConvention(BusinessDayConvention bdc);
         MakeOIS& withEndOfMonth(bool flag = true);
+        MakeOIS& withFixedLegEndOfMonth(bool flag = true);
+        MakeOIS& withOvernightLegEndOfMonth(bool flag = true);
         MakeOIS& withFixedLegDayCount(const DayCounter& dc);
         MakeOIS& withOvernightLegSpread(Spread sp);
         MakeOIS& withDiscountingTermStructure(
                   const Handle<YieldTermStructure>& discountingTermStructure);
         MakeOIS& withTelescopicValueDates(bool telescopicValueDates);
         MakeOIS& withAveragingMethod(RateAveraging::Type averagingMethod);
+        MakeOIS& withLookbackDays(Natural lookbackDays);
+        MakeOIS& withLockoutDays(Natural lockoutDays);
+        MakeOIS& withObservationShift(bool applyObservationShift = true);
         MakeOIS& withPricingEngine(
                               const ext::shared_ptr<PricingEngine>& engine);
 };
 
 #if defined(SWIGPYTHON)
-%pythoncode{
-def MakeOIS(swapTenor, overnightIndex, fixedRate, fwdStart=Period(0, Days),
-            receiveFixed=True,
-            swapType=Swap.Payer,
-            nominal=1.0,
-            settlementDays=2,
-            effectiveDate=None,
-            terminationDate=None,
-            dateGenerationRule=DateGeneration.Backward,
-            paymentFrequency=Annual,
-            paymentAdjustmentConvention=Following,
-            paymentLag=0,
-            paymentCalendar=None,
-            endOfMonth=True,    
-            fixedLegDayCount=None,
-            overnightLegSpread=0.0,
-            discountingTermStructure=None,
-            telescopicValueDates=False,
-            pricingEngine=None,
-            averagingMethod=None):
+%pythoncode {
+_MAKEOIS_METHODS = {
+    "receiveFixed": "receiveFixed",
+    "swapType": "withType",
+    "nominal": "withNominal",
+    "settlementDays": "withSettlementDays",
+    "effectiveDate": "withEffectiveDate",
+    "terminationDate": "withTerminationDate",
+    "dateGenerationRule": "withRule",
+    "fixedLegRule": "withFixedLegRule",
+    "overnightLegRule": "withOvernightLegRule",
+    "paymentFrequency": "withPaymentFrequency",
+    "fixedLegPaymentFrequency": "withFixedLegPaymentFrequency",
+    "overnightLegPaymentFrequency": "withOvernightLegPaymentFrequency",
+    "paymentAdjustmentConvention": "withPaymentAdjustment",
+    "paymentLag": "withPaymentLag",
+    "paymentCalendar": "withPaymentCalendar",
+    "calendar": "withCalendar",
+    "fixedLegCalendar": "withFixedLegCalendar",
+    "overnightLegCalendar": "withOvernightLegCalendar",
+    "convention": "withConvention",
+    "fixedLegConvention": "withFixedLegConvention",
+    "overnightLegConvention": "withOvernightLegConvention",
+    "terminationDateConvention": "withTerminationDateConvention",
+    "fixedLegTerminationDateConvention": "withFixedLegTerminationDateConvention",
+    "overnightLegTerminationDateConvention": "withOvernightLegTerminationDateConvention",
+    "endOfMonth": "withEndOfMonth",
+    "fixedLegEndOfMonth": "withFixedLegEndOfMonth",
+    "overnightLegEndOfMonth": "withOvernightLegEndOfMonth",
+    "fixedLegDayCount": "withFixedLegDayCount",
+    "overnightLegSpread": "withOvernightLegSpread",
+    "discountingTermStructure": "withDiscountingTermStructure",
+    "telescopicValueDates": "withTelescopicValueDates",
+    "averagingMethod": "withAveragingMethod",
+    "lookbackDays": "withLookbackDays",
+    "lockoutDays": "withLockoutDays",
+    "applyObservationShift": "withObservationShift",
+    "pricingEngine": "withPricingEngine",
+}
 
+def MakeOIS(swapTenor, overnightIndex, fixedRate=None, fwdStart=Period(0, Days), **kwargs):
     mv = _MakeOIS(swapTenor, overnightIndex, fixedRate, fwdStart)
-    
-    if not receiveFixed:
-        mv.receiveFixed(receiveFixed)
-    if swapType != Swap.Payer:
-        mv.withType(swapType)
-    if nominal != 1.0:
-        mv.withNominal(nominal)
-    if settlementDays != 2:
-        mv.withSettlementDays(settlementDays)
-    if effectiveDate is not None:
-        mv.withEffectiveDate(effectiveDate)
-    if terminationDate is not None:
-        mv.withTerminationDate(terminationDate)
-    if dateGenerationRule != DateGeneration.Backward:
-        mv.withRule(dateGenerationRule)  
-    if paymentFrequency != Annual:
-        mv.withPaymentFrequency(paymentFrequency)
-    if paymentAdjustmentConvention != Following:
-        mv.withPaymentAdjustment(paymentAdjustmentConvention)
-    if paymentLag != 0:
-        mv.withPaymentLag(paymentLag)
-    if paymentCalendar is not None:
-        mv.withPaymentCalendar(paymentCalendar)
-    if not endOfMonth:
-        mv.withEndOfMonth(endOfMonth)
-    if fixedLegDayCount is not None:
-        mv.withFixedLegDayCount(fixedLegDayCount)
-    else:
-        mv.withFixedLegDayCount(overnightIndex.dayCounter())
-    if overnightLegSpread != 0.0:
-        mv.withOvernightLegSpread(overnightLegSpread)
-    if discountingTermStructure is not None:
-        mv.withDiscountingTermStructure(discountingTermStructure)        
-    if telescopicValueDates:
-        mv.withTelescopicValueDates(telescopicValueDates)
-    if averagingMethod is not None:
-        mv.withAveragingMethod(averagingMethod)
-    if pricingEngine is not None:
-        mv.withPricingEngine(pricingEngine)
-
+    _apply_kwargs("MakeOIS", _MAKEOIS_METHODS, mv, kwargs)
     return mv.makeOIS()
 }
 #endif
@@ -639,54 +656,4 @@ class EquityTotalReturnSwap : public Swap {
     Real fairMargin() const;
 };
 
-%shared_ptr(ArithmeticAverageOIS)
-class ArithmeticAverageOIS : public Swap {
-  public:
-    ArithmeticAverageOIS(Type type,
-                         Real nominal,
-                         const Schedule& fixedLegSchedule,
-                         Rate fixedRate,
-                         DayCounter fixedDC,
-                         ext::shared_ptr<OvernightIndex> overnightIndex,
-                         const Schedule& overnightLegSchedule,
-                         Spread spread = 0.0,
-                         Real meanReversionSpeed = 0.03,
-                         Real volatility = 0.00, // NO convexity adjustment by default
-                         bool byApprox = false); // TRUE to use Katsumi Takada approximation
-    ArithmeticAverageOIS(Type type,
-                         std::vector<Real> nominals,
-                         const Schedule& fixedLegSchedule,
-                         Rate fixedRate,
-                         DayCounter fixedDC,
-                         ext::shared_ptr<OvernightIndex> overnightIndex,
-                         const Schedule& overnightLegSchedule,
-                         Spread spread = 0.0,
-                         Real meanReversionSpeed = 0.03,
-                         Real volatility = 0.00, // NO convexity adjustment by default
-                         bool byApprox = false); // TRUE to use Katsumi Takada approximation
-
-    Type type() const;
-    Real nominal() const;
-    std::vector<Real> nominals() const;
-
-    Frequency fixedLegPaymentFrequency();
-    Frequency overnightLegPaymentFrequency();
-
-    Rate fixedRate() const;
-    const DayCounter& fixedDayCount();
-
-    ext::shared_ptr<OvernightIndex> overnightIndex();
-    Spread spread() const;
-
-    const Leg& fixedLeg() const;
-    const Leg& overnightLeg() const;
-
-    Real fixedLegBPS() const;
-    Real fixedLegNPV() const;
-    Real fairRate() const;
-
-    Real overnightLegBPS() const;
-    Real overnightLegNPV() const;
-    Spread fairSpread() const;
-};
 #endif

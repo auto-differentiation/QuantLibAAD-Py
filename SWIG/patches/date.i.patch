@@ -1,7 +1,7 @@
 diff --git a/SWIG/date.i b/SWIG/date.i
 --- a/SWIG/date.i
 +++ b/SWIG/date.i
-@@ -922,4 +922,8 @@ struct ASX {
+@@ -936,4 +936,8 @@ struct ASX {
                                  const Date& referenceDate = Date());
  };
  

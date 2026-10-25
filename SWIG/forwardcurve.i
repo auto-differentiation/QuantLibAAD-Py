@@ -9,7 +9,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -27,7 +27,14 @@ using QuantLib::InterpolatedForwardCurve;
 %}
 
 %shared_ptr(InterpolatedForwardCurve<BackwardFlat>);
-            
+%shared_ptr(InterpolatedForwardCurve<ForwardFlat>);
+%shared_ptr(InterpolatedForwardCurve<Linear>);
+%shared_ptr(InterpolatedForwardCurve<Cubic>);
+%shared_ptr(InterpolatedForwardCurve<SplineCubic>);
+%shared_ptr(InterpolatedForwardCurve<ParabolicCubic>);
+%shared_ptr(InterpolatedForwardCurve<MonotonicParabolicCubic>);
+
+
 template <class Interpolator>
 class InterpolatedForwardCurve : public YieldTermStructure {
   public:
@@ -44,6 +51,11 @@ class InterpolatedForwardCurve : public YieldTermStructure {
 };
 
 %template(ForwardCurve) InterpolatedForwardCurve<BackwardFlat>;
-
+%template(ForwardFlatForwardCurve) InterpolatedForwardCurve<ForwardFlat>;
+%template(LinearForwardCurve) InterpolatedForwardCurve<Linear>;
+%template(CubicForwardCurve) InterpolatedForwardCurve<Cubic>;
+%template(NaturalCubicForwardCurve) InterpolatedForwardCurve<SplineCubic>;
+%template(ParabolicCubicForwardCurve) InterpolatedForwardCurve<ParabolicCubic>;
+%template(MonotonicParabolicCubicForwardCurve) InterpolatedForwardCurve<MonotonicParabolicCubic>;
 
 #endif

@@ -18,29 +18,31 @@ diff --git a/SWIG/null.i b/SWIG/null.i
  %}
  
  #if defined(SWIGPYTHON)
-@@ -57,33 +58,45 @@ double nullDouble() { return Null<double>(); }
+@@ -57,35 +58,47 @@ double nullDouble() { return Null<double>(); }
  
- %typemap(in) doubleOrNull {
+ %typemap(in) doubleOrNull %{
      if ($input == Py_None)
 -        $1 = Null<double>();
 +        $1 = Null<Real>();
      else if (PyFloat_Check($input))
          $1 = PyFloat_AsDouble($input);
+     else if (PyLong_Check($input))
+         $1 = PyLong_AsDouble($input);
 +#ifdef QL_XAD
 +    else if (check_Real($input))
 +        $1 = make_Real($input);
 +#endif
      else
-         SWIG_exception(SWIG_TypeError,"double expected");
- }
- %typecheck(SWIG_TYPECHECK_DOUBLE) doubleOrNull {
+         SWIG_exception(SWIG_TypeError, "double expected");
+ %}
+ %typecheck(SWIG_TYPECHECK_DOUBLE) doubleOrNull %{
 +#ifdef QL_XAD
-+    $1 = ($input == Py_None || PyFloat_Check($input) || check_Real($input)) ? 1 : 0;
++    $1 = ($input == Py_None || PyFloat_Check($input) || PyLong_Check($input) || check_Real($input)) ? 1 : 0;
 +#else
-     $1 = ($input == Py_None || PyFloat_Check($input)) ? 1 : 0;
+     $1 = ($input == Py_None || PyFloat_Check($input) || PyLong_Check($input)) ? 1 : 0;
 +#endif
- }
- %typemap(out) doubleOrNull {
+ %}
+ %typemap(out) doubleOrNull %{
 -    if ($1 == Null<double>()) {
 +    if ($1 == Null<Real>()) {
          Py_INCREF(Py_None);
@@ -52,7 +54,7 @@ diff --git a/SWIG/null.i b/SWIG/null.i
          $result = PyFloat_FromDouble($1);
 +#endif
      }
- }
+ %}
  
  #elif defined(SWIGJAVA)
  
@@ -68,19 +70,19 @@ diff --git a/SWIG/null.i b/SWIG/null.i
  
  #elif defined(SWIGR)
  
-@@ -117,7 +130,7 @@ typedef double doubleOrNull;
+@@ -119,7 +132,7 @@ typedef double doubleOrNull;
  
- %typemap(in) doubleOrNull {
+ %typemap(in) doubleOrNull %{
    $1 = ($1_ltype) REAL($input)[0];
 -  if (R_IsNA($1)) $1 = Null<double>();
 +  if (R_IsNA($1)) $1 = Null<Real>();
- }
+ %}
  
  %typemap(rtypecheck) doubleOrNull %{
-@@ -126,7 +139,7 @@ typedef double doubleOrNull;
+@@ -128,7 +141,7 @@ typedef double doubleOrNull;
  
  
- %typemap(out) doubleOrNull {
+ %typemap(out) doubleOrNull %{
 -    if ($1 == Null<double>())
 +    if ($1 == Null<Real>())
          $result = Rf_ScalarLogical(NA_LOGICAL);
