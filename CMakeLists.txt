@@ -35,16 +35,18 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-# static MSVC runtime everywhere (QuantLib, XAD, the module), as in xad-py
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# dynamic MSVC runtime everywhere (QuantLib, the module), as libxad is a DLL
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 option(QLR_QUANTLIB_ONLY
-       "Only build and install QuantLib + XAD + QuantLibAAD, for reuse via QLR_QUANTLIB_PREFIX"
+       "Only build and install QuantLib + QuantLibAAD, for reuse via QLR_QUANTLIB_PREFIX"
        OFF)
 set(QLR_QUANTLIB_PREFIX "" CACHE PATH
     "Install prefix of a QLR_QUANTLIB_ONLY build to reuse (empty: build QuantLib from lib/)")
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+include(QLRXad)
 
 if(QLR_QUANTLIB_PREFIX AND NOT QLR_QUANTLIB_ONLY)
   include(PrebuiltQuantLib)

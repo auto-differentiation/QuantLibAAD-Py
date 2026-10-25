@@ -40,6 +40,24 @@ foreach(dir PREFIX BUILD_DIR)
   get_filename_component(${dir} "${${dir}}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 endforeach()
 
+if(NOT XAD_DIR)
+  if(NOT PYTHON)
+    find_program(PYTHON NAMES python3.14 python3.13 python3.12 python3.11 python3.10 python3 python
+                 REQUIRED)
+  endif()
+  if(XAD_REQUIREMENT)
+    set(venv "${BUILD_DIR}/xad-venv")
+    execute_process(COMMAND "${PYTHON}" -m venv "${venv}" COMMAND_ERROR_IS_FATAL ANY)
+    find_program(venv_python NAMES python python3 PATHS "${venv}/bin" "${venv}/Scripts"
+                 NO_DEFAULT_PATH NO_CACHE REQUIRED)
+    set(PYTHON "${venv_python}")
+    execute_process(COMMAND "${PYTHON}" -m pip install "${XAD_REQUIREMENT}" COMMAND_ERROR_IS_FATAL ANY)
+  endif()
+  execute_process(COMMAND "${PYTHON}" -c "import xad; print(xad.get_cmake_dir())"
+                  OUTPUT_VARIABLE XAD_DIR OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+endif()
+file(TO_CMAKE_PATH "${XAD_DIR}" XAD_DIR)
+
 if(DEFINED ENV{CMAKE_BUILD_PARALLEL_LEVEL})
   set(jobs $ENV{CMAKE_BUILD_PARALLEL_LEVEL})
 else()
@@ -47,7 +65,7 @@ else()
 endif()
 
 foreach(step
-    "-S;${source_dir};-B;${BUILD_DIR};-DQLR_QUANTLIB_ONLY=ON;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_INSTALL_PREFIX=${PREFIX}"
+    "-S;${source_dir};-B;${BUILD_DIR};-DQLR_QUANTLIB_ONLY=ON;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_INSTALL_PREFIX=${PREFIX};-DXAD_DIR=${XAD_DIR}"
     "--build;${BUILD_DIR};--config;Release;--parallel;${jobs}"
     "--install;${BUILD_DIR};--config;Release")
   execute_process(COMMAND ${CMAKE_COMMAND} ${step} COMMAND_ERROR_IS_FATAL ANY)

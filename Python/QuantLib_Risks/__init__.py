@@ -31,6 +31,8 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 """
 
+import xad  # loads libxad, which the binary module links against
+
 from .QuantLib_Risks import *
 
 if XAD_ENABLED:

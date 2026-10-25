@@ -35,13 +35,19 @@ swig_add_library(QuantLib_Risks
                  LANGUAGE python
                  OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
                  SOURCES ${QLR_SWIG_SOURCE} converters.cpp)
-target_link_libraries(QuantLib_Risks PRIVATE QuantLib::QuantLib pybind11::module)
+target_link_libraries(QuantLib_Risks PRIVATE QuantLib::QuantLib XAD::xad pybind11::module)
 target_compile_definitions(QuantLib_Risks PRIVATE
     QL_XAD=1
     QLR_VERSION=\"${QLR_VERSION}\"
     QLR_HEX_VERSION=${QLR_HEX_VERSION})
 target_include_directories(QuantLib_Risks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(QuantLib_Risks PROPERTIES SUFFIX "${PYTHON_MODULE_EXTENSION}")
+# libxad from the installed xad package (on Windows, importing xad adds its DLL directory)
+if(APPLE)
+  set_target_properties(QuantLib_Risks PROPERTIES INSTALL_RPATH "@loader_path/../xad/lib")
+elseif(UNIX)
+  set_target_properties(QuantLib_Risks PROPERTIES INSTALL_RPATH "$ORIGIN/../xad/lib")
+endif()
 if(NOT CMAKE_BUILD_TYPE MATCHES "Debug|RelWithDebInfo")
   pybind11_strip(QuantLib_Risks)
 endif()

@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.41.0] - Unreleased
 
 - Matches QuantLib and QuantLib Python bindings version 1.41
-- Builds against XAD 2.1 and QuantLibAAD 1.41 (formerly QuantLib-Risks-Cpp), requires xad 2.1
+- Builds against QuantLibAAD 1.41 (formerly QuantLib-Risks-Cpp) and the shared libxad of the installed xad 2.2 package (`xad>=2.2,<2.3`), which is not bundled
+- Tapes are shared with xad through libxad, thread-local per Python thread; QuantLib no longer patches `xad.adj_1st.Tape`
 - Builds the unmodified QuantLib 1.41 release, no QuantLib patches
 - One-step build with scikit-build-core; wheels for Python 3.10-3.14 on Linux, macOS and Windows
 - `tools/sync-swig.sh` syncs `SWIG/` with a QuantLib-SWIG release, re-applying the XAD changes in `SWIG/patches/`
