@@ -1,6 +1,5 @@
 /******************************************************************************
- *  Tape activation functions to ensure an xad global tape instance
- *  matches the one in QuantLib-Risks. 
+ *  Conversion of xad.adj_1st.Tape arguments to xad::Tape<double>&.
  *
  *  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
  *  for risk computation using automatic differentiation. It uses XAD,
@@ -30,14 +29,6 @@
     #include "converters.hpp"
     #include <XAD/XAD.hpp>
 
-    void _activate_tape(xad::Tape<double>& t) {
-        xad::Tape<double>::setActive(&t);
-    }
-
-    void _deactivate_tape() {
-        xad::Tape<double>::deactivateAll();
-    }
-
     typedef xad::Tape<double> Tape;
 %}
 
@@ -58,8 +49,5 @@ typedef xad::Tape<double> Tape;
 %typecheck(QL_TYPECHECK_TAPE) xad::Tape<double>& {
     $1 = check_Tape($input) ? 1 : 0;
 }
-
-void _activate_tape(xad::Tape<double>& t);
-void _deactivate_tape();
 
 #endif
