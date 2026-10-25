@@ -32,10 +32,7 @@
 
 import QuantLib_Risks as ql
 import unittest
-if ql.XAD_ENABLED:
-    from xad import math
-else:
-    import math
+import math
 
 
 class IntegralTest(unittest.TestCase):

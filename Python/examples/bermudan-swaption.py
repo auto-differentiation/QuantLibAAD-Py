@@ -93,7 +93,7 @@ swaptionVols = [
 
 # This is a flat yield term structure implying a 1x5 swap at 5%.
 
-rate = ql.QuoteHandle(ql.SimpleQuote(0.04875825))
+rate = ql.makeQuoteHandle(0.04875825)
 termStructure = ql.YieldTermStructureHandle(ql.FlatForward(settlementDate, rate, ql.Actual365Fixed()))
 
 # Define the ATM/OTM/ITM swaps:
@@ -166,7 +166,7 @@ helpers = [
     ql.SwaptionHelper(
         maturity,
         length,
-        ql.QuoteHandle(ql.SimpleQuote(vol)),
+        ql.makeQuoteHandle(vol),
         index,
         index.tenor(),
         index.dayCounter(),
