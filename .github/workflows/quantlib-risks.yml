@@ -78,7 +78,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.platform.build }}
           # Linux builds run in containers: ccache installed there, cache on the host (/host)
-          CIBW_BEFORE_ALL_LINUX: dnf install -y ccache || apk add --no-cache ccache
+          CIBW_BEFORE_ALL_LINUX: dnf install -y ccache git || apk add --no-cache ccache git
           CIBW_INHERIT: "before-all-linux: prepend"
           CIBW_ENVIRONMENT_LINUX: >-
             CMAKE_CXX_COMPILER_LAUNCHER=ccache
