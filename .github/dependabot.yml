@@ -1,8 +1,24 @@
+# submodules are bumped manually (XAD and pybind11 must match xad)
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
 version: 2
 updates:
-
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # pinned to the XAD in lib/xad
+      - dependency-name: "xad"
+    groups:
+      python:
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every weekday
       interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

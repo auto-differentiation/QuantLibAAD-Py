@@ -12,6 +12,23 @@ Useful links:
 pip install QuantLib-Risks
 ```
 
+Binary wheels are provided for CPython 3.10 to 3.14 on Linux (x86_64, aarch64), macOS (x86_64, arm64)
+and Windows (x86_64). The package requires the matching [xad](https://pypi.org/project/xad/) release,
+which pip installs automatically.
+
+### Building from source
+
+On other platforms pip builds the package from the source distribution, which compiles QuantLib
+and takes a while. This needs a C++17 compiler; CMake, Ninja and SWIG are
+fetched as build dependencies, and Boost headers are downloaded unless found on the system
+(or via `BOOST_ROOT`). To build from a clone of the
+[repository](https://github.com/auto-differentiation/QuantLib-Risks-Py):
+
+```
+git clone --recurse-submodules https://github.com/auto-differentiation/QuantLib-Risks-Py.git
+pip install -v ./QuantLib-Risks-Py
+```
+
 ## Usage Illustration
 
 ```python
@@ -38,4 +55,4 @@ with Tape() as t:
 ## Related Projects
 
 - XAD Comprehensive automatic differentiation in [Python](https://github.com/auto-differentiation/xad-py) and [C++](https://github.com/auto-differentiation/xad)
-- QuantLib-Risks: Fast risk evaluations in [Python](https://github.com/auto-differentiation/QuantLib-Risks-Py) and [C++](https://github.com/auto-differentiation/QuantLib-Risks-Cpp)
+- QuantLib-Risks: Fast risk evaluations in [Python](https://github.com/auto-differentiation/QuantLib-Risks-Py) and [C++ (QuantLibAAD)](https://github.com/auto-differentiation/QuantLibAAD)
