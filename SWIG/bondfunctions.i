@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -69,13 +69,16 @@ class BondFunctions {
     static Real cleanPrice(const Bond& bond,
                            const YieldTermStructure& discountCurve,
                            Date settlementDate = Date());
+    static Real dirtyPrice(const Bond& bond,
+                           const YieldTermStructure& discountCurve,
+                           Date settlementDate = Date());
     static Real bps(const Bond& bond,
                     const YieldTermStructure& discountCurve,
                     Date settlementDate = Date());
     static Rate atmRate(const Bond& bond,
                         const YieldTermStructure& discountCurve,
                         Date settlementDate = Date(),
-                        Real cleanPrice = Null<Real>());
+                        BondPrice price = {});
 
     static Real cleanPrice(const Bond& bond,
                            const InterestRate& yield,
@@ -96,7 +99,7 @@ class BondFunctions {
                     Frequency frequency,
                     Date settlementDate = Date());
     static Rate yield(const Bond& bond,
-                      Real cleanPrice,
+                      BondPrice price,
                       const DayCounter& dayCounter,
                       Compounding compounding,
                       Frequency frequency,
@@ -143,8 +146,23 @@ class BondFunctions {
                                      Compounding compounding,
                                      Frequency frequency,
                                      Date settlementDate = Date());
+
+    static Real cleanPrice(const Bond& bond,
+                           const ext::shared_ptr<YieldTermStructure>& discount,
+                           Spread zSpread,
+                           const DayCounter& dayCounter,
+                           Compounding compounding,
+                           Frequency frequency,
+                           Date settlementDate = Date());
+    static Real dirtyPrice(const Bond& bond,
+                           const ext::shared_ptr<YieldTermStructure>& discount,
+                           Spread zSpread,
+                           const DayCounter& dayCounter,
+                           Compounding compounding,
+                           Frequency frequency,
+                           Date settlementDate = Date());
     static Spread zSpread(const Bond& bond,
-                          Real cleanPrice,
+                          BondPrice price,
                           const ext::shared_ptr<YieldTermStructure>& discountCurve,
                           const DayCounter& dayCounter,
                           Compounding compounding,
@@ -158,18 +176,18 @@ class BondFunctions {
 
         %define DefineYieldFunctionSolver(SolverType)
         static Rate yield ## SolverType(SolverType solver,
-                                         const Bond& bond,
-                                         Real cleanPrice,
-                                         const DayCounter& dayCounter,
-                                         Compounding compounding,
-                                         Frequency frequency,
-                                         Date settlementDate = Date(),
-                                         Real accuracy = 1.0e-10,
-                                         Rate guess = 0.05) {
+                                        const Bond& bond,
+                                        BondPrice price,
+                                        const DayCounter& dayCounter,
+                                        Compounding compounding,
+                                        Frequency frequency,
+                                        Date settlementDate = Date(),
+                                        Real accuracy = 1.0e-10,
+                                        Rate guess = 0.05) {
             return QuantLib::BondFunctions::yield<SolverType>(
                         solver,
                         bond,
-                        cleanPrice,
+                        price,
                         dayCounter,
                         compounding,
                         frequency,

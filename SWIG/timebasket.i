@@ -9,7 +9,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -45,7 +45,8 @@ class TimeBasket {
             (*self)[d] = value;
         }
         PyObject* items() {
-            PyObject* itemList = PyList_New(self->size());
+            auto itemList = PyPtr::fromResult(PyList_New(self->size()),
+                                              "failed to convert arguments");
             TimeBasket::iterator i;
             Size j;
             for (i=self->begin(), j=0; i!=self->end(); ++i, ++j) {
@@ -59,33 +60,27 @@ class TimeBasket {
 #else
                 PyTuple_SetItem(item,1,PyFloat_FromDouble(i->second));
 #endif
-                PyList_SetItem(itemList,j,item);
+                PyList_SetItem(itemList.get(),j,item);
             }
-            return itemList;
+            return itemList.release();
         }
         // Python 2.2 methods
         bool __contains__(const Date& d) {
             return self->hasDate(d);
         }
         PyObject* __iter__() {
-            %#if PY_VERSION_HEX >= 0x02020000
-            PyObject* keyList = PyList_New(self->size());
+            auto keyList = PyPtr::fromResult(PyList_New(self->size()),
+                                             "failed to convert arguments");
             TimeBasket::iterator i;
             Size j;
             for (i=self->begin(), j=0; i!=self->end(); ++i, ++j) {
                 Date* d = new Date(i->first);
-                PyList_SetItem(keyList,j,
+                PyList_SetItem(keyList.get(), j,
                                SWIG_NewPointerObj((void *) d,
                                                   $descriptor(Date *),1));
             }
-            PyObject* iter = PyObject_GetIter(keyList);
-            Py_DECREF(keyList);
-            return iter;
-            %#else
-            throw std::runtime_error("Python 2.2 or later is needed"
-                                     " for iterator support");
-            %#endif
-            }
+            return PyObject_GetIter(keyList.get());
+        }
         #endif
     }
 };

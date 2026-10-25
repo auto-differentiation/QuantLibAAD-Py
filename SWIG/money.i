@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -22,14 +22,15 @@
 
 %include currencies.i
 
+#if defined(SWIGJAVA)
+%typemap(javainterfaces) Money QL_JAVA_INTERFACES "Comparable<Money>"
+#endif
+
 %{
 using QuantLib::Money;
 %}
 
 class Money {
-    #if defined(SWIGJAVA)
-    %rename("compare") __cmp__;
-    #endif
   public:
     Money(const Currency& currency, Decimal value);
     Money(Decimal value, const Currency& currency);
@@ -48,19 +49,19 @@ class Money {
         Decimal operator/(const Money& m) { return *self/m; }
         #if defined(SWIGPYTHON)
         Money __rmul__(Decimal x) { return *self*x; }
-        bool __lt__(const Money& other) {
+        bool operator<(const Money& other) {
             return *self < other;
         }
-        bool __gt__(const Money& other) {
+        bool operator>(const Money& other) {
             return other < *self;
         }
-        bool __le__(const Money& other) {
+        bool operator<=(const Money& other) {
             return !(other < *self);
         }
-        bool __ge__(const Money& other) {
+        bool operator>=(const Money& other) {
             return !(*self < other);
         }
-        #endif
+        #else
         int __cmp__(const Money& other) {
             if (*self < other)
                 return -1;
@@ -68,6 +69,13 @@ class Money {
                 return 0;
             else
                 return 1;
+        }
+        #endif
+        bool operator==(const Money& other) {
+            return *self == other;
+        }
+        bool operator!=(const Money& other) {
+            return *self != other;
         }
         std::string __str__() {
             std::ostringstream out;

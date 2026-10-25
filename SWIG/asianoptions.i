@@ -11,7 +11,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -39,6 +39,11 @@ class ContinuousAveragingAsianOption : public OneAssetOption {
   public:
     ContinuousAveragingAsianOption(
             Average::Type averageType,
+            const ext::shared_ptr<StrikedTypePayoff>& payoff,
+            const ext::shared_ptr<Exercise>& exercise);
+    ContinuousAveragingAsianOption(
+            Average::Type averageType,
+            Date startDate,
             const ext::shared_ptr<StrikedTypePayoff>& payoff,
             const ext::shared_ptr<Exercise>& exercise);
 };
@@ -440,6 +445,8 @@ using QuantLib::ContinuousArithmeticAsianLevyEngine;
 class ContinuousArithmeticAsianLevyEngine : public PricingEngine {
   public:
     ContinuousArithmeticAsianLevyEngine(const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
+                                        const Handle<Quote>& runningAverage);
+    ContinuousArithmeticAsianLevyEngine(const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
                                         const Handle<Quote>& runningAverage,
                                         const Date& startDate);
 };
@@ -453,6 +460,20 @@ class FdBlackScholesAsianEngine : public PricingEngine {
   public:
     FdBlackScholesAsianEngine(const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
                               Size tGrid, Size xGrid, Size aGrid);
+};
+
+
+%{
+using QuantLib::ChoiAsianEngine;
+%}
+
+%shared_ptr(ChoiAsianEngine)
+class ChoiAsianEngine : public PricingEngine {
+  public:
+    ChoiAsianEngine(
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+        Real lambda = 15,
+        Size maxNrIntegrationSteps = 2 << 21);
 };
 
 %{

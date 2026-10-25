@@ -15,7 +15,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -52,6 +52,7 @@ class BondPrice {
     BondPrice(Real amount, Type type);
     Real amount() const;
     Type type() const;
+    bool isValid() const;
 };
 
 %shared_ptr(Bond)
@@ -73,9 +74,12 @@ class Bond : public Instrument {
     // public functions
     Rate nextCouponRate(const Date& d = Date());
     Rate previousCouponRate(const Date& d = Date());
+    Date nextCashFlowDate(Date d = Date()) const;
+    Date previousCashFlowDate(Date d = Date()) const;
     // inspectors
     Natural settlementDays() const;
     Date settlementDate(Date d = Date());
+    bool isTradable(Date d = Date()) const;
     Date startDate() const;
     Date maturityDate() const;
     Date issueDate() const;
@@ -103,13 +107,14 @@ class Bond : public Instrument {
                Frequency freq,
                Real accuracy = 1.0e-8,
                Size maxEvaluations = 100);
-    Real yield(Real cleanPrice,
+    Real yield(BondPrice price,
                const DayCounter& dc,
                Compounding compounding,
                Frequency freq,
                const Date& settlement = Date(),
                Real accuracy = 1.0e-8,
-               Size maxEvaluations = 100);
+               Size maxEvaluations = 100,
+               Real guess = 0.05);
     Real accruedAmount(const Date& settlement = Date());
     Real settlementValue() const;
     Real settlementValue(Real cleanPrice) const;

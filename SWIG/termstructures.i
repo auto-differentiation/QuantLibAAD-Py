@@ -1,4 +1,3 @@
-
 /*
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
  Copyright (C) 2003, 2004, 2014 StatPro Italia srl
@@ -12,7 +11,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -34,7 +33,6 @@
 %include interpolation.i
 %include functions.i
 
-
 %{
 using QuantLib::TermStructure;
 %}
@@ -52,8 +50,8 @@ class TermStructure : public Observable {
     Time maxTime() const;
     // from Extrapolator, since we can't use multiple inheritance
     // and we're already inheriting from Observable
-    void enableExtrapolation();
-    void disableExtrapolation();
+    void enableExtrapolation(bool b = true);
+    void disableExtrapolation(bool b = true);
     bool allowsExtrapolation();
 };
 
@@ -132,9 +130,12 @@ using Name = QuantLib::InterpolatedPiecewiseZeroSpreadedTermStructure<Interpolat
 
 %shared_ptr(Name)
 class Name : public YieldTermStructure {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") Name;
+    #endif
   public:
-    Name(const Handle<YieldTermStructure>& curveHandle,
-         const std::vector< Handle<Quote> >& spreadHandles,
+    Name(const Handle<YieldTermStructure>& baseCurve,
+         const std::vector< Handle<Quote> >& spreads,
          const std::vector<Date>& dates,
          Compounding comp = QuantLib::Continuous,
          Frequency freq = QuantLib::NoFrequency,
@@ -146,6 +147,34 @@ class Name : public YieldTermStructure {
 export_ipzsts_instance(PiecewiseZeroSpreadedTermStructure, Linear)
 export_ipzsts_instance(SpreadedLinearZeroInterpolatedTermStructure, Linear)
 export_ipzsts_instance(SpreadedBackwardFlatZeroInterpolatedTermStructure, BackwardFlat)
+export_ipzsts_instance(SpreadedCubicZeroInterpolatedTermStructure, Cubic)
+export_ipzsts_instance(SpreadedKrugerZeroInterpolatedTermStructure, Kruger)
+export_ipzsts_instance(SpreadedSplineCubicZeroInterpolatedTermStructure, SplineCubic)
+export_ipzsts_instance(SpreadedParabolicCubicZeroInterpolatedTermStructure, ParabolicCubic)
+export_ipzsts_instance(SpreadedMonotonicParabolicCubicZeroInterpolatedTermStructure, MonotonicParabolicCubic)
+
+
+%define export_ipfwsts_instance(Name,Interpolator)
+%{
+using Name = QuantLib::InterpolatedPiecewiseForwardSpreadedTermStructure<Interpolator>;
+%}
+
+%shared_ptr(Name)
+class Name : public YieldTermStructure {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") Name;
+    #endif
+  public:
+    Name(const Handle<YieldTermStructure>& baseCurve,
+         const std::vector< Handle<Quote> >& spreads,
+         const std::vector<Date>& dates,
+         const DayCounter& dc = DayCounter(),
+         const Interpolator& factory = Interpolator());
+};
+%enddef
+
+export_ipfwsts_instance(PiecewiseForwardSpreadedTermStructure, BackwardFlat)
+export_ipfwsts_instance(PiecewiseLinearForwardSpreadedTermStructure, Linear)
 
 
 // flat forward curve
@@ -186,12 +215,18 @@ using QuantLib::UltimateForwardTermStructure;
 
 %shared_ptr(UltimateForwardTermStructure);
 class UltimateForwardTermStructure : public YieldTermStructure {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") UltimateForwardTermStructure;
+    #endif
   public:
     UltimateForwardTermStructure(const Handle<YieldTermStructure>& curveHandle,
                                  const Handle<Quote>& lastLiquidForwardRate,
                                  const Handle<Quote>& ultimateForwardRate,
                                  const Period& firstSmoothingPoint,
-                                 Real alpha);
+                                 Real alpha,
+                                 ext::optional<Integer> roundingDigits = ext::nullopt,
+                                 Compounding compounding = Compounded,
+                                 Frequency frequency = Annual);
 };
 
 

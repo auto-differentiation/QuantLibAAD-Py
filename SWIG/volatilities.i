@@ -14,7 +14,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -50,19 +50,16 @@ enum VolatilityType { ShiftedLognormal, Normal };
 
 #if defined(SWIGPYTHON)
 %typemap(in) ext::optional<VolatilityType> %{
-    if($input == Py_None)
+    if ($input == Py_None)
         $1 = ext::nullopt;
-    else if (PyInt_Check($input))
-        $1 = (VolatilityType) PyInt_AsLong($input);
+    else if (PyLong_Check($input))
+        $1 = (VolatilityType)PyLong_AsLong($input);
     else
-        $1 = (VolatilityType) PyLong_AsLong($input);
+        SWIG_exception(SWIG_TypeError, "int expected");
 %}
-%typecheck (QL_TYPECHECK_VOLATILITYTYPE) ext::optional<VolatilityType> {
-if (PyInt_Check($input) || PyLong_Check($input) || Py_None == $input)
-    $1 = 1;
-else
-    $1 = 0;
-}
+%typecheck (QL_TYPECHECK_VOLATILITYTYPE) ext::optional<VolatilityType> %{
+    $1 = (PyLong_Check($input) || $input == Py_None) ? 1 : 0;
+%}
 #endif
 
 %{
@@ -175,7 +172,6 @@ class YoYOptionletVolatilitySurface : public VolatilityTermStructure {
 
 %template(YoYOptionletVolatilitySurfaceHandle) Handle<YoYOptionletVolatilitySurface>;
 %template(RelinkableYoYOptionletVolatilitySurfaceHandle) RelinkableHandle<YoYOptionletVolatilitySurface>;
-deprecate_feature(RelinkableYoYOptionletVolatilitySurface, RelinkableYoYOptionletVolatilitySurfaceHandle);
 
 
 %{
@@ -280,6 +276,141 @@ class SwaptionVolatilityStructure : public VolatilityTermStructure {
 
 
 
+%{
+using QuantLib::sabrVolatility;
+using QuantLib::shiftedSabrVolatility;
+using QuantLib::sabrFlochKennedyVolatility;
+%}
+
+Real sabrVolatility(Rate strike,
+                    Rate forward,
+                    Time expiryTime,
+                    Real alpha,
+                    Real beta,
+                    Real nu,
+                    Real rho,
+                    VolatilityType volatilityType = VolatilityType::ShiftedLognormal);
+
+Real shiftedSabrVolatility(Rate strike,
+                           Rate forward,
+                           Time expiryTime,
+                           Real alpha,
+                           Real beta,
+                           Real nu,
+                           Real rho,
+                           Real shift,
+                           VolatilityType volatilityType = VolatilityType::ShiftedLognormal);
+
+Real sabrFlochKennedyVolatility(Rate strike,
+                                Rate forward,
+                                Time expiryTime,
+                                Real alpha,
+                                Real beta,
+                                Real nu,
+                                Real rho);
+
+%rename(sabrGuess) _sabrGuess;
+%inline %{
+    std::vector<Real> _sabrGuess(Real k_m, Volatility vol_m,
+                                 Real k_0, Volatility vol_0,
+                                 Real k_p, Volatility vol_p,
+                                 Rate forward,
+                                 Time expiryTime,
+                                 Real beta,
+                                 Real shift,
+                                 VolatilityType volatilityType) {
+        auto [alpha, beta_1, nu, rho] =
+            QuantLib::sabrGuess(k_m, vol_m, k_0, vol_0, k_p, vol_p,
+                                forward, expiryTime, beta, shift, volatilityType);
+        return { alpha, beta_1, nu, rho };
+    }
+%}
+
+
+%{
+// safe version which copies its arguments
+class SafeSABRInterpolation {
+  public:
+    SafeSABRInterpolation(const Array& strikes,
+                          const Array& volatilities,
+                          Time expiryTime,
+                          Real forward,
+                          Real alpha,
+                          Real beta,
+                          Real nu,
+                          Real rho,
+                          bool alphaIsFixed = false,
+                          bool betaIsFixed = false,
+                          bool nuIsFixed = false,
+                          bool rhoIsFixed = false,
+                          bool vegaWeighted = true,
+                          const ext::shared_ptr<EndCriteria>& endCriteria = {},
+                          const ext::shared_ptr<OptimizationMethod>& optMethod = {},
+                          Real errorAccept=0.0020,
+                          bool useMaxError=false,
+                          Size maxGuesses=50,
+                          Real shift = 0.0,
+                          VolatilityType volatilityType = VolatilityType::ShiftedLognormal)
+    : x_(strikes), y_(volatilities), forward_(forward),
+      f_(x_.begin(),x_.end(),y_.begin(),
+         expiryTime, forward_, alpha, beta, nu, rho,
+         alphaIsFixed, betaIsFixed,
+         nuIsFixed, rhoIsFixed,
+         vegaWeighted, endCriteria, optMethod,
+         errorAccept, useMaxError, maxGuesses,
+         shift, volatilityType) {f_.update();}
+    Real operator()(Real x, bool allowExtrapolation=false) const {
+        return f_(x, allowExtrapolation);
+    }
+    Real alpha() const {return f_.alpha();}
+    Real beta() const {return f_.beta();}
+    Real rho() const {return f_.rho();}
+    Real nu() const {return f_.nu();}
+
+  private:
+    Array x_, y_;  // passed via iterators, need to stay alive
+    Real forward_; // passed by reference, same
+    QuantLib::SABRInterpolation f_;
+};
+%}
+
+%rename(SABRInterpolation) SafeSABRInterpolation;
+class SafeSABRInterpolation {
+    #if defined(SWIGCSHARP)
+    %rename(call) operator();
+    #endif
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") SafeSABRInterpolation;
+    #endif
+  public:
+    SafeSABRInterpolation(const Array& strikes,
+                          const Array& volatilities,
+                          Time expiryTime,
+                          Real forward,
+                          Real alpha,
+                          Real beta,
+                          Real nu,
+                          Real rho,
+                          bool alphaIsFixed = false,
+                          bool betaIsFixed = false,
+                          bool nuIsFixed = false,
+                          bool rhoIsFixed = false,
+                          bool vegaWeighted = true,
+                          const ext::shared_ptr<EndCriteria>& endCriteria = {},
+                          const ext::shared_ptr<OptimizationMethod>& optMethod = {},
+                          const Real errorAccept=0.0020,
+                          const bool useMaxError=false,
+                          const Size maxGuesses=50,
+                          const Real shift = 0.0,
+                          VolatilityType volatilityType = VolatilityType::ShiftedLognormal);
+    Real operator()(Real x, bool allowExtrapolation=false) const;
+    Real alpha() const;
+    Real beta() const;
+    Real rho() const;
+    Real nu() const;
+};
+
+
 // actual term structures below
 
 // constant Black vol term structure
@@ -320,6 +451,18 @@ class BlackVarianceCurve : public BlackVolTermStructure {
                        const std::vector<Real>& volatilities,
                        const DayCounter& dayCounter,
                        bool forceMonotoneVariance = true);
+    %extend {
+      void setInterpolation(const std::string& interpolator = "") {
+          std::string s = boost::to_lower_copy(interpolator);
+          if (s == "" || s == "linear") {
+              self->setInterpolation<QuantLib::Linear>();
+          } else if (s == "cubic") {
+              self->setInterpolation<QuantLib::Cubic>();
+          } else {
+              QL_FAIL("Unknown interpolator: " << interpolator);
+          }
+      }
+    }
 };
 
 
@@ -694,7 +837,6 @@ class SabrSwaptionVolatilityCube : public SwaptionVolatilityCube {
     }
 };
 
-deprecate_feature(SwaptionVolCube1, SabrSwaptionVolatilityCube)
 
 %shared_ptr(InterpolatedSwaptionVolatilityCube);
 class InterpolatedSwaptionVolatilityCube : public SwaptionVolatilityCube {
@@ -709,7 +851,18 @@ class InterpolatedSwaptionVolatilityCube : public SwaptionVolatilityCube {
                                        bool vegaWeightedSmileFit);
 };
 
-deprecate_feature(SwaptionVolCube2, InterpolatedSwaptionVolatilityCube)
+
+%{
+using QuantLib::SpreadedSwaptionVolatility;
+%}
+
+%shared_ptr(SpreadedSwaptionVolatility)
+class SpreadedSwaptionVolatility : public SwaptionVolatilityStructure {
+  public:
+    SpreadedSwaptionVolatility(const Handle<SwaptionVolatilityStructure>&,
+                               Handle<Quote> spread);
+};
+
 
 
 %{
@@ -988,46 +1141,13 @@ class NoArbSabrInterpolatedSmileSection : public SmileSection {
 };
 
 %{
-using QuantLib::sabrVolatility;
-using QuantLib::shiftedSabrVolatility;
-using QuantLib::sabrFlochKennedyVolatility;
-%}
-
-Real sabrVolatility(Rate strike,
-                    Rate forward,
-                    Time expiryTime,
-                    Real alpha,
-                    Real beta,
-                    Real nu,
-                    Real rho,
-                    VolatilityType volatilityType = VolatilityType::ShiftedLognormal);
-
-Real shiftedSabrVolatility(Rate strike,
-                           Rate forward,
-                           Time expiryTime,
-                           Real alpha,
-                           Real beta,
-                           Real nu,
-                           Real rho,
-                           Real shift,
-                           VolatilityType volatilityType = VolatilityType::ShiftedLognormal);
-
-Real sabrFlochKennedyVolatility(Rate strike,
-                                Rate forward,
-                                Time expiryTime,
-                                Real alpha,
-                                Real beta,
-                                Real nu,
-                                Real rho);
-
-%{
 using QuantLib::AndreasenHugeVolatilityInterpl;
 using QuantLib::AndreasenHugeVolatilityAdapter;
 using QuantLib::AndreasenHugeLocalVolAdapter;
 using QuantLib::HestonBlackVolSurface;
 %}
 
-%template(CalibrationErrorTuple) ext::tuple<Real, Real, Real>;
+%template(CalibrationErrorTuple) std::tuple<Real, Real, Real>;
 
 %shared_ptr(AndreasenHugeVolatilityInterpl)
 class AndreasenHugeVolatilityInterpl : public Observable {
@@ -1067,7 +1187,7 @@ class AndreasenHugeVolatilityInterpl : public Observable {
         const Handle<YieldTermStructure>& riskFreeRate() const;
 
         // returns min, max and average error in volatility units
-        ext::tuple<Real, Real, Real> calibrationError() const;
+        std::tuple<Real, Real, Real> calibrationError() const;
 
         // returns the option price of the calibration type. In case
         // of CallPut it return the call option price

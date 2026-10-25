@@ -8,7 +8,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -64,67 +64,43 @@ class OdeFctDelegate {
 %{
 class OdeFct {
   public:
-    OdeFct(PyObject* function) : function_(function) {
-        Py_XINCREF(function_);
-    }
-    OdeFct(const OdeFct& f)
-    : function_(f.function_) {
-        Py_XINCREF(function_);
-    }
-    OdeFct& operator=(const OdeFct& f) {
-        if ((this != &f) && (function_ != f.function_)) {
-            Py_XDECREF(function_);
-            function_ = f.function_;
-            Py_XINCREF(function_);
-        }
-        return *this;
-    }
-    ~OdeFct() {
-        Py_XDECREF(function_);
-    }
-    
+    OdeFct(PyObject* function)
+    : function_(PyPtr::fromBorrowed(function)) {}
+
     const std::vector<Real> operator()(Real x, const std::vector<Real>& y) const {
-        PyObject* pyY = PyList_New(y.size());
+        auto pyY = PyPtr::fromResult(PyList_New(y.size()), "failed to convert arguments");
+        for (Size i=0; i < y.size(); ++i)
 #ifdef QL_XAD
-        for (Size i=0; i < y.size(); ++i)
-            PyList_SetItem(pyY, i, make_PyObject(y[i]));
-        
-        PyObject* xo = make_PyObject(x);
-        PyObject* pyResult = PyObject_CallFunctionObjArgs(function_, xo, pyY, nullptr);
-        Py_XDECREF(pyY);
-        Py_XDECREF(xo);
-        if (PyErr_Occurred()) {
-          PyErr_Print();
-        }
+            PyList_SetItem(pyY.get(), i, make_PyObject(y[i]));
 
-        QL_ENSURE(pyResult != NULL && PyList_Check(pyResult), 
-            "failed to call Python function");
-       
-           std::vector<Real> retVal(y.size());
-           for (Size i=0; i < y.size(); ++i)
-               retVal[i] = make_Real(PyList_GET_ITEM(pyResult, i));
+        auto pyResult = PyPtr::fromResult(
+            PyObject_CallFunctionObjArgs(function_.get(),
+                                         PyPtr::fromNew(make_PyObject(x)).get(),
+                                         pyY.get(), NULL),
 #else
-        for (Size i=0; i < y.size(); ++i)
-            PyList_SetItem(pyY, i, PyFloat_FromDouble(y[i]));
-        
-        PyObject* pyResult = PyObject_CallFunction(function_,"dO",x, pyY);
-        
-        Py_XDECREF(pyY);
+            PyList_SetItem(pyY.get(), i, PyFloat_FromDouble(y[i]));
 
-        QL_ENSURE(pyResult != NULL && PyList_Check(pyResult), 
+        auto pyResult = PyPtr::fromResult(
+            PyObject_CallFunction(function_.get(), "dO", x, pyY.get()),
+#endif
             "failed to call Python function");
-       
-           std::vector<Real> retVal(y.size());
-           for (Size i=0; i < y.size(); ++i)
-               retVal[i] = PyFloat_AsDouble(PyList_GET_ITEM(pyResult, i));
-                          
-#endif                          
-        Py_XDECREF(pyResult);
-        
+
+        QL_ENSURE(
+            PyList_Check(pyResult.get()) && PyList_Size(pyResult.get()) == y.size(),
+            "Python function did not return a list of correct size");
+
+        std::vector<Real> retVal(y.size());
+        for (Size i=0; i < y.size(); ++i)
+#ifdef QL_XAD
+            retVal[i] = make_Real(PyList_GetItem(pyResult.get(), i));
+#else
+            retVal[i] = PyFloat_AsDouble(PyList_GetItem(pyResult.get(), i));
+#endif
+
         return retVal;
     }
   private:
-    PyObject* function_;
+    PyPtr function_;
 };
 %}
 

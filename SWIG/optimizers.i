@@ -12,7 +12,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -196,6 +196,7 @@ class EndCriteria {
         StationaryFunctionValue,
         StationaryFunctionAccuracy,
         ZeroGradientNorm,
+        FunctionEpsilonTooSmall,
         Unknown
     };
     EndCriteria(Size maxIteration,
@@ -203,14 +204,8 @@ class EndCriteria {
                 Real rootEpsilon,
                 Real functionEpsilon,
                 Real gradientNormEpsilon);
-    bool operator()(Size iteration,
-                    Size &statState,
-                    const bool positiveOptimization,
-                    const Real fold,
-                    const Real normgold,
-                    const Real fnew,
-                    const Real normgnewx,
-                    EndCriteria::Type & ecType) const;
+
+    static bool succeeded(EndCriteria::Type ecType);
 };
 
 

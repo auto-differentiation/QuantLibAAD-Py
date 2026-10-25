@@ -12,7 +12,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -43,7 +43,6 @@ class Currency {
              const std::string& fractionSymbol,
              Integer fractionsPerUnit,
              const Rounding& rounding,
-             const std::string& formatString,
              const Currency& triangulationCurrency = Currency());
     
     const std::string& name() const;
@@ -53,7 +52,6 @@ class Currency {
     const std::string& fractionSymbol() const;
     Integer fractionsPerUnit() const;
     const Rounding& rounding() const;
-    std::string format() const;
     bool empty() const;
     const Currency& triangulationCurrency() const;
     %extend {
@@ -61,11 +59,14 @@ class Currency {
             return self->name();
         }
         #if defined(SWIGPYTHON) || defined(SWIGJAVA)
-        bool __eq__(const Currency& other) {
+        bool operator==(const Currency& other) {
             return (*self) == other;
         }
-        bool __ne__(const Currency& other) {
+        bool operator!=(const Currency& other) {
             return (*self) != other;
+        }
+        hash_t __hash__() {
+            return self->empty() ? 0 : std::hash<std::string>()(self->name());
         }
         #endif
         #if defined(SWIGPYTHON)
@@ -75,20 +76,11 @@ class Currency {
         Money __rmul__(Decimal x) {
             return *self*x;
         }
-        bool __nonzero__() {
-            return !self->empty();
-        }
         bool __bool__() {
             return !self->empty();
         }
         #endif
     }
-    #if defined(SWIGPYTHON)
-    %pythoncode %{
-    def __hash__(self):
-        return hash(self.name())
-    %}
-    #endif
 };
 
 

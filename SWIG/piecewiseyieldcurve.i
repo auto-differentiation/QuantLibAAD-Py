@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -23,23 +23,13 @@
 %include termstructures.i
 %include ratehelpers.i
 %include interpolation.i
+%include optimizers.i
 %include null.i
-
-// bootstrap traits
 
 %{
 using QuantLib::Discount;
 using QuantLib::ZeroYield;
 using QuantLib::ForwardRate;
-%}
-
-struct Discount {};
-struct ZeroYield {};
-struct ForwardRate {};
-
-// curve
-
-%{
 using QuantLib::PiecewiseYieldCurve;
 %}
 
@@ -144,6 +134,7 @@ class Name : public YieldTermStructure {
     }
     const std::vector<Date>& dates() const;
     const std::vector<Time>& times() const;
+    const std::vector<Real>& data() const;
     #if !defined(SWIGR)
     std::vector<std::pair<Date,Real> > nodes() const;
     #endif
@@ -170,6 +161,10 @@ export_piecewise_curve(PiecewiseConvexMonotoneZero,ZeroYield,ConvexMonotone);
 export_piecewise_curve(PiecewiseNaturalCubicZero,ZeroYield,SplineCubic);
 export_piecewise_curve(PiecewiseNaturalLogCubicDiscount,Discount,SplineLogCubic);
 export_piecewise_curve(PiecewiseLogMixedLinearCubicDiscount,Discount,LogMixedLinearCubic);
+export_piecewise_curve(PiecewiseParabolicCubicZero,ZeroYield,ParabolicCubic);
+export_piecewise_curve(PiecewiseMonotonicParabolicCubicZero,ZeroYield,MonotonicParabolicCubic);
+export_piecewise_curve(PiecewiseLogParabolicCubicDiscount,Discount,LogParabolicCubic);
+export_piecewise_curve(PiecewiseMonotonicLogParabolicCubicDiscount,Discount,MonotonicLogParabolicCubic);
 
 
 // global boostrapper
@@ -207,21 +202,32 @@ struct _GlobalBootstrap {
     std::vector<ext::shared_ptr<RateHelper> > additionalHelpers;
     std::vector<Date> additionalDates;
     Real accuracy;
-    _GlobalBootstrap(Real accuracy = Null<Real>())
-    : accuracy(accuracy) {}
+    ext::shared_ptr<OptimizationMethod> optimizer;
+    ext::shared_ptr<EndCriteria> endCriteria;
+    _GlobalBootstrap(Real accuracy = Null<Real>(),
+                     ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                     ext::shared_ptr<EndCriteria> endCriteria = nullptr)
+    : accuracy(accuracy), optimizer(optimizer), endCriteria(endCriteria) {}
    _GlobalBootstrap(const std::vector<ext::shared_ptr<RateHelper> >& additionalHelpers,
-                     const std::vector<Date>& additionalDates,
-                     Real accuracy = Null<Real>())
-    : additionalHelpers(additionalHelpers), additionalDates(additionalDates), accuracy(accuracy) {}
+                    const std::vector<Date>& additionalDates,
+                    Real accuracy = Null<Real>(),
+                    ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                    ext::shared_ptr<EndCriteria> endCriteria = nullptr)
+   : additionalHelpers(additionalHelpers), additionalDates(additionalDates), accuracy(accuracy),
+     optimizer(optimizer), endCriteria(endCriteria) {}
 };
 %}
 
 %rename(GlobalBootstrap) _GlobalBootstrap;
 struct _GlobalBootstrap {
-    _GlobalBootstrap(doubleOrNull accuracy = Null<Real>());
+    _GlobalBootstrap(doubleOrNull accuracy = Null<Real>(),
+                     ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                     ext::shared_ptr<EndCriteria> endCriteria = nullptr);
     _GlobalBootstrap(const std::vector<ext::shared_ptr<RateHelper> >& additionalHelpers,
                      const std::vector<Date>& additionalDates,
-                     doubleOrNull accuracy = Null<Real>());
+                     doubleOrNull accuracy = Null<Real>(),
+                     ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                     ext::shared_ptr<EndCriteria> endCriteria = nullptr);
 };
 
 
@@ -243,14 +249,14 @@ class GlobalLinearSimpleZeroCurve : public YieldTermStructure {
             if (b.additionalHelpers.empty()) {
                 return new GlobalLinearSimpleZeroCurve(
                     referenceDate, instruments, dayCounter, Linear(),
-                    GlobalLinearSimpleZeroCurve::bootstrap_type(b.accuracy));
+                    GlobalLinearSimpleZeroCurve::bootstrap_type(b.accuracy, b.optimizer, b.endCriteria));
             } else {
                 return new GlobalLinearSimpleZeroCurve(
                     referenceDate, instruments, dayCounter, Linear(),
                     GlobalLinearSimpleZeroCurve::bootstrap_type(b.additionalHelpers,
                                                                 AdditionalDates(b.additionalDates),
                                                                 AdditionalErrors(b.additionalHelpers),
-                                                                b.accuracy));
+                                                                b.accuracy, b.optimizer, b.endCriteria));
             }
         }
     }
@@ -261,5 +267,54 @@ class GlobalLinearSimpleZeroCurve : public YieldTermStructure {
     #endif
 };
 
+
+%{
+using QuantLib::PiecewiseSpreadYieldCurve;
+%}
+
+%define export_piecewise_spread_curve(Name,Traits,Interpolator)
+
+%{
+typedef PiecewiseSpreadYieldCurve<Traits, Interpolator> Name;
+%}
+
+%shared_ptr(Name);
+class Name : public YieldTermStructure {
+    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
+    %feature("kwargs") Name;
+    #endif
+  public:
+    %extend {
+        Name(const Handle<YieldTermStructure>& baseCurve,
+             const std::vector<ext::shared_ptr<RateHelper> >& instruments,
+             const Interpolator& interpolator = Interpolator(),
+             const _IterativeBootstrap& bootstrap = _IterativeBootstrap()) {
+            return new Name(baseCurve, instruments, interpolator, make_bootstrap<Name>(bootstrap));
+        }
+    }
+    const Handle<YieldTermStructure>& baseCurve() const;
+    const std::vector<Date>& dates() const;
+    const std::vector<Time>& times() const;
+    const std::vector<Real>& data() const;
+    #if !defined(SWIGR)
+    std::vector<std::pair<Date,Real> > nodes() const;
+    #endif
+
+    void recalculate();
+    void freeze();
+    void unfreeze();
+};
+
+%enddef
+
+export_piecewise_spread_curve(PiecewiseLogLinearSpreadDiscount,Discount,LogLinear);
+#if defined(SWIGPYTHON)
+deprecate_feature(PiecewiseLogLinearDiscountSpread, PiecewiseLogLinearSpreadDiscount);
+#else
+export_piecewise_spread_curve(PiecewiseLogLinearDiscountSpread,Discount,LogLinear);
+#endif
+export_piecewise_spread_curve(PiecewiseLogCubicSpreadDiscount,Discount,MonotonicLogCubic);
+export_piecewise_spread_curve(PiecewiseNaturalLogCubicSpreadDiscount,Discount,SplineLogCubic);
+export_piecewise_spread_curve(PiecewiseLogMixedLinearCubicSpreadDiscount,Discount,LogMixedLinearCubic);
 
 #endif

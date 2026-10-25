@@ -11,7 +11,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -28,7 +28,6 @@
 %{
 using QuantLib::Array;
 using QuantLib::Matrix;
-using QuantLib::SampledCurve;
 %}
 
 %define QL_TYPECHECK_ARRAY       4210    %enddef
@@ -47,8 +46,8 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
             if (PyFloat_Check(o)) {
                 (*target)[i] = PyFloat_AsDouble(o);
                 Py_DECREF(o);
-            } else if (PyInt_Check(o)) {
-                (*target)[i] = Real(PyInt_AsLong(o));
+            } else if (PyLong_Check(o)) {
+                (*target)[i] = PyLong_AsDouble(o);
                 Py_DECREF(o);
 #ifdef QL_XAD
             } else if (check_Real(o)) {
@@ -189,8 +188,8 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
                     if (PyFloat_Check(d)) {
                         $1[i][j] = PyFloat_AsDouble(d);
                         Py_DECREF(d);
-                    } else if (PyInt_Check(d)) {
-                        $1[i][j] = Real(PyInt_AsLong(d));
+                    } else if (PyLong_Check(d)) {
+                        $1[i][j] = PyLong_AsDouble(d);
                         Py_DECREF(d);
 #ifdef QL_XAD
                     } else if (check_Real(d)) {
@@ -265,8 +264,8 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
                     if (PyFloat_Check(d)) {
                         temp[i][j] = PyFloat_AsDouble(d);
                         Py_DECREF(d);
-                    } else if (PyInt_Check(d)) {
-                        temp[i][j] = Real(PyInt_AsLong(d));
+                    } else if (PyLong_Check(d)) {
+                        temp[i][j] = PyLong_AsDouble(d);
                         Py_DECREF(d);
 #ifdef QL_XAD
                     } else if (check_Real(d)) {
@@ -333,34 +332,6 @@ function(x) print(as.matrix(x)))
 setMethod("as.matrix", "_p_Matrix",
 function(x) matrix(data=as.numeric(x$dataVector),
         nrow=x$rows(), ncol=x$columns()))
-
-setMethod("print", "_p_SampledCurve",
-function(x) print(as.data.frame(x))
-)
-
-setMethod("as.data.frame", "_p_SampledCurve",
-function(x,row.names,optional)
-data.frame("grid"=as(x$grid(), "numeric"),
-"values"=as(x$values(), "numeric")))
-
-setMethod("plot", "_p_SampledCurve",
-function(x,y) plot(as.data.frame(x)))
-
-%}
-#endif
-
-#if defined(SWIGR)
-%Rruntime %{
-setMethod("+", c("_p_Array", "_p_Array"),
-    function(e1,e2) Array___add__(e1,e2))
-setMethod("-", c("_p_Array", "_p_Array"),
-    function(e1,e2) Array___sub__(e1,e2))
-setMethod("*", c("_p_Array", "_p_Array"),
-    function(e1,e2) Array___mul__(e1,e2))
-setMethod("*", c("_p_Array", "numeric"),
-    function(e1,e2) Array___mul__(e1,e2))
-setMethod("/", c("_p_Array", "numeric"),
-    function(e1,e2) Array___div__(e1,e2))    
 %}
 #endif
 
@@ -383,29 +354,52 @@ class Array {
             out << *self;
             return out.str();
         }
+        #if defined(SWIGPYTHON) || defined(SWIGJAVA)
+        bool operator==(const Array& other) {
+            return (*self) == other;
+        }
+        bool operator!=(const Array& other) {
+            return (*self) != other;
+        }
+        #endif
         #if defined(SWIGPYTHON) || defined(SWIGR)
-        Array __add__(const Array& a) {
-            return Array(*self+a);
+        Array operator-() {
+            return -*self;
         }
-        Array __sub__(const Array& a) {
-            return Array(*self-a);
+        Array operator+(Real a) {
+            return *self+a;
         }
-        Array __mul__(Real a) {
-            return Array(*self*a);
+        Array operator+(const Array& a) {
+            return *self+a;
         }
-        Real __mul__(const Array& a) {
-            return QuantLib::DotProduct(*self,a);
+        Array operator-(Real a) {
+            return *self-a;
         }
-        Array __mul__(const Matrix& a) {
+        Array operator-(const Array& a) {
+            return *self-a;
+        }
+        Array operator*(Real a) {
             return *self*a;
         }
-        Array __div__(Real a) {
-            return Array(*self/a);
+        Array operator*(const Array& a) {
+            return *self*a;
+        }
+        Array operator*(const Matrix& a) {
+            return *self*a;
+        }
+        Array operator/(Real a) {
+            return *self/a;
+        }
+        Array operator/(const Array& a) {
+            return *self/a;
         }
         #endif
         #if defined(SWIGPYTHON)
         Array __rmul__(Real a) {
             return Array(*self*a);
+        }
+        Real __matmul__(const Array& a) {
+            return QuantLib::DotProduct(*self,a);
         }
         Array __getslice__(Integer i, Integer j) {
             Integer size_ = static_cast<Integer>(self->size());
@@ -431,14 +425,9 @@ class Array {
                       "arrays are not resizable");
             std::copy(rhs.begin(),rhs.end(),self->begin()+i);
         }
-        bool __nonzero__() {
-            return (self->size() != 0);
-        }
         bool __bool__() {
             return (self->size() != 0);
         }
-        #endif
-        #if defined(SWIGPYTHON)
         Real __getitem__(Integer i) {
             Integer size_ = static_cast<Integer>(self->size());
             if (i>=0 && i<size_) {
@@ -638,13 +627,16 @@ class Matrix {
 using QuantLib::inverse;
 using QuantLib::pseudoSqrt;
 using QuantLib::SalvagingAlgorithm;
+using QuantLib::CholeskyDecomposition;
+using QuantLib::CholeskySolveFor;
+using QuantLib::SymmetricSchurDecomposition;
 %}
 
 struct SalvagingAlgorithm {
     #if defined(SWIGPYTHON)
     %rename(NoAlgorithm) None;
     #endif
-    enum Type { None, Spectral };
+    enum Type {None, Spectral, Hypersphere, LowerDiagonal, Higham, Principal};
 };
 
 Matrix inverse(const Matrix& m);
@@ -661,6 +653,16 @@ class SVD {
     const Array& singularValues() const;
 };
 
+Matrix CholeskyDecomposition(const Matrix& m, bool flexible = false);
+Array CholeskySolveFor(const Matrix& L, const Array& b);
+
+class SymmetricSchurDecomposition {
+  public:
+    SymmetricSchurDecomposition(const Matrix &s);
+    const Array& eigenvalues() const;
+    const Matrix& eigenvectors() const;
+};
+
 %{
 using QuantLib::BiCGstab;
 using QuantLib::GMRES;
@@ -668,67 +670,34 @@ using QuantLib::GMRES;
 
 #if defined(SWIGPYTHON)
 %{
-Array extractArray(PyObject* source, const std::string& methodName) {
+Array extractArray(PyObject* source, const char* methodName) {
     QL_ENSURE(source != NULL,
-              "failed to call " + methodName + " on Python object");
+              "failed to call " << methodName << " on Python object");
 
-    QL_ENSURE(source != Py_None, methodName + " returned None");
-        
-    Array* ptr;            
-    const int err = SWIG_ConvertPtr(
-        source, (void **) &ptr, SWIGTYPE_p_Array, SWIG_POINTER_EXCEPTION);
-
-    if (err != 0) {
-        Py_XDECREF(source);
-        QL_FAIL("return type must be of type QuantLib Array in " 
-            + methodName);
-    }
-    
-    Array tmp(*ptr);          
-    Py_XDECREF(source);
-     
-    return tmp;
+    Array* ptr;
+    int err = SWIG_ConvertPtr(
+        source, (void**)&ptr, SWIGTYPE_p_Array, SWIG_POINTER_NO_NULL);
+    QL_ENSURE(SWIG_IsOK(err), methodName << " must return a QuantLib Array");
+    return *ptr;
 }
 
 class MatrixMultiplicationProxy {
   public:
     MatrixMultiplicationProxy(PyObject* matrixMult)
-    : matrixMult_(matrixMult) {
-        Py_XINCREF(matrixMult_);    
-    }
-    
-    MatrixMultiplicationProxy(const MatrixMultiplicationProxy& p) 
-    : matrixMult_(p.matrixMult_) {
-        Py_XINCREF(matrixMult_);
-    }
-        
-    MatrixMultiplicationProxy& operator=(const MatrixMultiplicationProxy& f) {
-        if ((this != &f) && (matrixMult_ != f.matrixMult_)) {
-            Py_XDECREF(matrixMult_);
-            matrixMult_ = f.matrixMult_;
-            Py_XINCREF(matrixMult_);
-        }
-        return *this;
-    }
-        
-    ~MatrixMultiplicationProxy() {
-        Py_XDECREF(matrixMult_);    
-    }
+    : matrixMult_(PyPtr::fromBorrowed(matrixMult)) {}
     
     Array operator()(const Array& x) const {
-        PyObject* pyArray = SWIG_NewPointerObj(
-            SWIG_as_voidptr(&x), SWIGTYPE_p_Array, 0);
-            
-        PyObject* pyResult 
-            = PyObject_CallFunction(matrixMult_, "O", pyArray);
-        
-        Py_XDECREF(pyArray);
-        
-        return extractArray(pyResult, "matrix multiplication");         
+        auto pyArray = PyPtr::fromNew(SWIG_NewPointerObj(
+            SWIG_as_voidptr(&x), SWIGTYPE_p_Array, 0));
+
+        auto pyResult = PyPtr::fromNew(
+            PyObject_CallFunction(matrixMult_.get(), "O", pyArray.get()));
+
+        return extractArray(pyResult.get(), "matrix multiplication");
     }
     
   private:
-    PyObject* matrixMult_;      
+    PyPtr matrixMult_;
 };
 %}
 

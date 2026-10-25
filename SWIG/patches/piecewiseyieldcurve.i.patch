@@ -1,7 +1,7 @@
 diff --git a/SWIG/piecewiseyieldcurve.i b/SWIG/piecewiseyieldcurve.i
 --- a/SWIG/piecewiseyieldcurve.i
 +++ b/SWIG/piecewiseyieldcurve.i
-@@ -45,14 +45,14 @@ using QuantLib::PiecewiseYieldCurve;
+@@ -35,14 +35,14 @@ using QuantLib::PiecewiseYieldCurve;
  
  %{
  struct _IterativeBootstrap {
@@ -20,7 +20,7 @@ diff --git a/SWIG/piecewiseyieldcurve.i b/SWIG/piecewiseyieldcurve.i
                          Size maxAttempts = 1,
                          Real maxFactor = 2.0,
                          Real minFactor = 2.0,
-@@ -81,9 +81,9 @@ struct _IterativeBootstrap {
+@@ -71,9 +71,9 @@ struct _IterativeBootstrap {
      #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
      %feature("kwargs") _IterativeBootstrap;
      #endif
@@ -33,31 +33,38 @@ diff --git a/SWIG/piecewiseyieldcurve.i b/SWIG/piecewiseyieldcurve.i
                          Size maxAttempts = 1,
                          Real maxFactor = 2.0,
                          Real minFactor = 2.0,
-@@ -206,22 +206,22 @@ class AdditionalDates {
+@@ -201,16 +201,16 @@ class AdditionalDates {
  struct _GlobalBootstrap {
      std::vector<ext::shared_ptr<RateHelper> > additionalHelpers;
      std::vector<Date> additionalDates;
 -    double accuracy;
--    _GlobalBootstrap(double accuracy = Null<double>())
 +    Real accuracy;
-+    _GlobalBootstrap(Real accuracy = Null<Real>())
-     : accuracy(accuracy) {}
+     ext::shared_ptr<OptimizationMethod> optimizer;
+     ext::shared_ptr<EndCriteria> endCriteria;
+-    _GlobalBootstrap(double accuracy = Null<double>(),
++    _GlobalBootstrap(Real accuracy = Null<Real>(),
+                      ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                      ext::shared_ptr<EndCriteria> endCriteria = nullptr)
+     : accuracy(accuracy), optimizer(optimizer), endCriteria(endCriteria) {}
     _GlobalBootstrap(const std::vector<ext::shared_ptr<RateHelper> >& additionalHelpers,
-                      const std::vector<Date>& additionalDates,
--                     double accuracy = Null<double>())
-+                     Real accuracy = Null<Real>())
-     : additionalHelpers(additionalHelpers), additionalDates(additionalDates), accuracy(accuracy) {}
- };
- %}
+                     const std::vector<Date>& additionalDates,
+-                    double accuracy = Null<double>(),
++                    Real accuracy = Null<Real>(),
+                     ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                     ext::shared_ptr<EndCriteria> endCriteria = nullptr)
+    : additionalHelpers(additionalHelpers), additionalDates(additionalDates), accuracy(accuracy),
+@@ -220,12 +220,12 @@ struct _GlobalBootstrap {
  
  %rename(GlobalBootstrap) _GlobalBootstrap;
  struct _GlobalBootstrap {
--    _GlobalBootstrap(doubleOrNull accuracy = Null<double>());
-+    _GlobalBootstrap(doubleOrNull accuracy = Null<Real>());
+-    _GlobalBootstrap(doubleOrNull accuracy = Null<double>(),
++    _GlobalBootstrap(doubleOrNull accuracy = Null<Real>(),
+                      ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                      ext::shared_ptr<EndCriteria> endCriteria = nullptr);
      _GlobalBootstrap(const std::vector<ext::shared_ptr<RateHelper> >& additionalHelpers,
                       const std::vector<Date>& additionalDates,
--                     doubleOrNull accuracy = Null<double>());
-+                     doubleOrNull accuracy = Null<Real>());
+-                     doubleOrNull accuracy = Null<double>(),
++                     doubleOrNull accuracy = Null<Real>(),
+                      ext::shared_ptr<OptimizationMethod> optimizer = nullptr,
+                      ext::shared_ptr<EndCriteria> endCriteria = nullptr);
  };
- 
- 

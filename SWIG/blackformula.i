@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -29,6 +29,7 @@ using QuantLib::blackFormulaImpliedStdDevLiRS;
 using QuantLib::blackFormulaCashItmProbability;
 using QuantLib::blackFormulaAssetItmProbability;
 using QuantLib::bachelierBlackFormula;
+using QuantLib::bachelierBlackFormulaImpliedVolChoi;
 using QuantLib::bachelierBlackFormulaImpliedVol;
 using QuantLib::bachelierBlackFormulaAssetItmProbability;
 %}
@@ -111,6 +112,13 @@ Real bachelierBlackFormulaImpliedVol(Option::Type optionType,
                                 Real tte,
                                 Real bachelierPrice,
                                 Real discount = 1.0);
+
+Real bachelierBlackFormulaImpliedVolChoi(Option::Type optionType,
+                                         Real strike,
+                                         Real forward,
+                                         Real tte,
+                                         Real bachelierPrice,
+                                         Real discount = 1.0);
 
 Real bachelierBlackFormulaAssetItmProbability(
                         Option::Type optionType,
