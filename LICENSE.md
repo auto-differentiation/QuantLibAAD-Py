@@ -1,6 +1,6 @@
 # License Terms
 
-QuantLib-Risks is published under the AGPL, version 3, with the terms
+QuantLibAAD is published under the AGPL, version 3, with the terms
 [given below](#gnu-affero-general-public-license). 
 
 It contains code from [QuantLib](https://www.quantlib.org) 
@@ -8,7 +8,7 @@ and is based on [QuantLib-SWIG](https://github.com/lballabio/QuantLib-SWIG),
 which are shipped with a different (compatible) license.
 The license terms for these packages [are given below](#quantlib-swig-license). 
 
-## QuantLib-Risks License
+## QuantLibAAD License
 
 ### GNU AFFERO GENERAL PUBLIC LICENSE
 

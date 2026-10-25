@@ -3,7 +3,7 @@
 ##############################################################################
 #   
 #
-#  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+#  This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
 #  for risk computation using automatic differentiation. It uses XAD,
 #  a fast and comprehensive C++ library for automatic differentiation.
 #
