@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -32,152 +32,84 @@ using QuantLib::CostFunction;
 %{
 class UnaryFunction {
   public:
-    UnaryFunction(PyObject* function) : function_(function) {
-        Py_XINCREF(function_);
-    }
-    UnaryFunction(const UnaryFunction& f) : function_(f.function_) {
-        Py_XINCREF(function_);
-    }
-    UnaryFunction& operator=(const UnaryFunction& f) {
-        if ((this != &f) && (function_ != f.function_)) {
-            Py_XDECREF(function_);
-            function_ = f.function_;
-            Py_XINCREF(function_);
-        }
-        return *this;
-    }
-    ~UnaryFunction() {
-        Py_XDECREF(function_);
-    }
+    UnaryFunction(PyObject* function)
+    : function_(PyPtr::fromBorrowed(function)) {}
+
     Real operator()(Real x) const {
+        auto pyResult = PyPtr::fromResult(
 #ifdef QL_XAD
-        PyObject* xo = make_PyObject(x);
-        PyObject* pyResult = PyObject_CallFunctionObjArgs(function_, xo, nullptr);
-        Py_XDECREF(xo);
-        if (PyErr_Occurred()) {
-          PyErr_Print();
-        }
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = make_Real(pyResult);
+            PyObject_CallFunctionObjArgs(function_.get(),
+                                         PyPtr::fromNew(make_PyObject(x)).get(), NULL),
+            "failed to call Python function");
+        return make_Real(pyResult.get());
 #else
-        PyObject* pyResult = PyObject_CallFunction(function_,"d",x);
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = PyFloat_AsDouble(pyResult);
+            PyObject_CallFunction(function_.get(), "d", x),
+            "failed to call Python function");
+        return PyFloat_AsDouble(pyResult.get());
 #endif
-        Py_XDECREF(pyResult);
-        return result;
     }
     Real derivative(Real x) const {
+        auto pyResult = PyPtr::fromResult(
 #ifdef QL_XAD
-        PyObject* xo = make_PyObject(x);
-        PyObject* pyResult =
-            PyObject_CallMethod(function_,"derivative", "O", xo);
-        Py_XDECREF(xo);
-        if (PyErr_Occurred()) {
-          PyErr_Print();
-        }
-        QL_ENSURE(pyResult != NULL,
-                  "failed to call derivative() on Python object");
-        Real result = make_Real(pyResult);
+            PyObject_CallMethod(function_.get(), "derivative", "O",
+                                PyPtr::fromNew(make_PyObject(x)).get()),
+            "failed to call derivative() on Python object");
+        return make_Real(pyResult.get());
 #else
-        PyObject* pyResult =
-            PyObject_CallMethod(function_,"derivative","d",x);
-        QL_ENSURE(pyResult != NULL,
-                  "failed to call derivative() on Python object");
-        Real result = PyFloat_AsDouble(pyResult);
+            PyObject_CallMethod(function_.get(), "derivative", "d", x),
+            "failed to call derivative() on Python object");
+        return PyFloat_AsDouble(pyResult.get());
 #endif
-        Py_XDECREF(pyResult);
-        return result;
     }
   private:
-    PyObject* function_;
+    PyPtr function_;
 };
 
 class BinaryFunction {
   public:
-    BinaryFunction(PyObject* function) : function_(function) {
-        Py_XINCREF(function_);
-    }
-    BinaryFunction(const BinaryFunction& f)
-    : function_(f.function_) {
-        Py_XINCREF(function_);
-    }
-    BinaryFunction& operator=(const BinaryFunction& f) {
-        if ((this != &f) && (function_ != f.function_)) {
-            Py_XDECREF(function_);
-            function_ = f.function_;
-            Py_XINCREF(function_);
-        }
-        return *this;
-    }
-    ~BinaryFunction() {
-        Py_XDECREF(function_);
-    }
+    BinaryFunction(PyObject* function)
+    : function_(PyPtr::fromBorrowed(function)) {}
+
     Real operator()(Real x, Real y) const {
+        auto pyResult = PyPtr::fromResult(
 #ifdef QL_XAD
-        PyObject *xo = make_PyObject(x), *yo = make_PyObject(y);
-        PyObject* pyResult = PyObject_CallFunctionObjArgs(function_,xo, yo, nullptr);
-        Py_XDECREF(xo);
-        Py_XDECREF(yo);
-        if (PyErr_Occurred()) {
-          PyErr_Print();
-        }
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = make_Real(pyResult);
+            PyObject_CallFunctionObjArgs(function_.get(),
+                                         PyPtr::fromNew(make_PyObject(x)).get(),
+                                         PyPtr::fromNew(make_PyObject(y)).get(), NULL),
+            "failed to call Python function");
+        return make_Real(pyResult.get());
 #else
-        PyObject* pyResult = PyObject_CallFunction(function_,"dd",x,y);
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = PyFloat_AsDouble(pyResult);
+            PyObject_CallFunction(function_.get(), "dd", x, y),
+            "failed to call Python function");
+        return PyFloat_AsDouble(pyResult.get());
 #endif
-        Py_XDECREF(pyResult);
-        return result;
     }
   private:
-    PyObject* function_;
+    PyPtr function_;
 };
 
 class PyCostFunction : public CostFunction {
   public:
-    PyCostFunction(PyObject* function) : function_(function) {
-        Py_XINCREF(function_);
-    }
-    PyCostFunction(const PyCostFunction& f)
-    : function_(f.function_) {
-        Py_XINCREF(function_);
-    }
-    PyCostFunction& operator=(const PyCostFunction& f) {
-        if ((this != &f) && (function_ != f.function_)) {
-            Py_XDECREF(function_);
-            function_ = f.function_;
-            Py_XINCREF(function_);
-        }
-        return *this;
-    }
-    ~PyCostFunction() {
-        Py_XDECREF(function_);
-    }
+    PyCostFunction(PyObject* function)
+    : function_(PyPtr::fromBorrowed(function)) {}
+
     Real value(const Array& x) const {
-        PyObject* tuple = PyTuple_New(x.size());
+        auto tuple = PyPtr::fromResult(PyTuple_New(x.size()), "failed to convert arguments");
+        for (Size i=0; i<x.size(); i++)
 #ifdef QL_XAD
-        for (Size i=0; i<x.size(); i++)
-            PyTuple_SetItem(tuple,i, make_PyObject(x[i]));
-        PyObject* pyResult = PyObject_CallObject(function_,tuple);
-        Py_XDECREF(tuple);
-        if (PyErr_Occurred()) {
-          PyErr_Print();
-        }
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = make_Real(pyResult);
+            PyTuple_SetItem(tuple.get(), i, make_PyObject(x[i]));
 #else
-        for (Size i=0; i<x.size(); i++)
-            PyTuple_SetItem(tuple,i,PyFloat_FromDouble(x[i]));
-        PyObject* pyResult = PyObject_CallObject(function_,tuple);
-        Py_XDECREF(tuple);
-        QL_ENSURE(pyResult != NULL, "failed to call Python function");
-        Real result = PyFloat_AsDouble(pyResult);
+            PyTuple_SetItem(tuple.get(), i, PyFloat_FromDouble(x[i]));
 #endif
-        Py_XDECREF(pyResult);
-        return result;
+
+        auto pyResult = PyPtr::fromResult(
+            PyObject_CallFunction(function_.get(), "O", tuple.get()),
+            "failed to call Python function");
+#ifdef QL_XAD
+        return make_Real(pyResult.get());
+#else
+        return PyFloat_AsDouble(pyResult.get());
+#endif
     }
     Array values(const Array& x) const {
         QL_FAIL("Not implemented");
@@ -185,7 +117,7 @@ class PyCostFunction : public CostFunction {
         // to an array
     }
   private:
-    PyObject* function_;
+    PyPtr function_;
 };
 %}
 

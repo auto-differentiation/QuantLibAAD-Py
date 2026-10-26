@@ -30,7 +30,7 @@
     #include "converters.hpp"
 %}
 
-%typemap(in) const std::vector<ext::tuple<Real, Real, bool> >& (std::vector<ext::tuple<Real, Real, bool>> temp) {
+%typemap(in) const std::vector<std::tuple<Real, Real, bool> >& (std::vector<std::tuple<Real, Real, bool>> temp) {
     try {
         if (PyList_Check($input)) {
             temp = make_mesher_point_vector_from_list($input);
@@ -45,7 +45,7 @@
 
 %define QL_TYPECHECK_CONC_VEC 4993 %enddef
 
-%typecheck(QL_TYPECHECK_CONC_VEC) const std::vector<ext::tuple<Real, Real, bool> >&
+%typecheck(QL_TYPECHECK_CONC_VEC) const std::vector<std::tuple<Real, Real, bool> >&
 {
     $1 = mesher_point_vector_check($input) ? 1 : 0;
 }

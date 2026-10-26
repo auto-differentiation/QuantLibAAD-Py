@@ -1,0 +1,126 @@
+##############################################################################
+#
+#  QuantLib-Risks - package and build configuration
+#
+#  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+#  for risk computation using automatic differentiation. It uses XAD,
+#  a fast and comprehensive C++ library for automatic differentiation.
+#
+#  Copyright (C) 2010-2024 Xcelerit Computing Ltd.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+
+[build-system]
+# swig 4.5 drops the PyInt_* macros used in SWIG/
+requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.5"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "QuantLib-Risks"
+# keep in sync with CMakeLists.txt
+version = "1.41.0"
+description = "Fast risks calculations in QuantLib"
+readme = "Python/README.md"
+requires-python = ">=3.10"
+license = { text = "AGPL-3.0-or-later" }
+authors = [
+    { name = "Auto Differentiation Dev Team", email = "dev@auto-differentiation.com" },
+    { name = "QuantLib Team", email = "quantlib-users@lists.sourceforge.net" },
+]
+keywords = [
+    "automatic-differentiation",
+    "derivatives",
+    "risk-management",
+    "quant-finance",
+    "greeks",
+    "risks",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "License :: Other/Proprietary License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development",
+]
+# the binary module shares xad's tape and Real type: same XAD/pybind11 build
+dependencies = ["xad==2.1.*"]
+
+[project.urls]
+Homepage = "https://auto-differentiation.github.io"
+Repository = "https://github.com/auto-differentiation/QuantLib-Risks-Py"
+Documentation = "https://auto-differentiation.github.io/quantlib-risks/python/"
+Download = "https://pypi.org/project/QuantLib-Risks/#files"
+Tracker = "https://github.com/auto-differentiation/QuantLib-Risks-Py/issues"
+
+[dependency-groups]
+test = ["pytest"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.18"
+build.verbose = true
+# the package is installed by CMake (Python/QuantLib_Risks/CMakeLists.txt)
+wheel.packages = []
+install.components = ["python"]
+# submodule parts not needed to build
+sdist.exclude = [
+    ".github",
+    "binder",
+    "build",
+    "lib/QuantLib/Docs",
+    "lib/QuantLib/Examples",
+    "lib/QuantLib/test-suite",
+    "lib/QuantLib/fuzz-test-suite",
+    "lib/xad/docs",
+    "lib/xad/samples",
+    "lib/xad/test",
+    "lib/pybind11/docs",
+    "lib/pybind11/tests",
+]
+
+[tool.cibuildwheel]
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]
+skip = ["cp3??t-*"]  # no free-threaded builds
+archs = ["native"]  # one arch per runner
+build-verbosity = 1
+# QuantLib (with XAD and QuantLibAAD) is built once per platform and reused
+# by all wheels through QLR_QUANTLIB_PREFIX
+before-all = "cmake -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
+config-settings = { "cmake.define.QLR_QUANTLIB_PREFIX" = "{project}/build/quantlib-prefix" }
+test-groups = ["test"]
+# xad 2.1 is released together with this package: until then, test against xad-py main
+before-test = "pip install \"xad @ git+https://github.com/auto-differentiation/xad-py.git@7961b377f2cbbfec994193f55c23d7be34a72b5c\""
+# importlib mode tests the installed package; Python/test would clash with the stdlib test package
+test-command = "pytest -p no:cacheprovider --import-mode=importlib {project}/Python/test"
+
+[tool.cibuildwheel.macos]
+# one target for the QuantLib build (before-all) and all wheels (raised to 11.0 on arm64)
+environment = { MACOSX_DEPLOYMENT_TARGET = "10.15" }

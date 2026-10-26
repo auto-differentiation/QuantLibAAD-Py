@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -30,8 +30,8 @@
 %{
 #include <ql/quantlib.hpp>
 
-#if QL_HEX_VERSION < 0x01290000
-    #error using an old version of QuantLib, please update
+#if QL_HEX_VERSION < 0x01410000
+    #error at least QuantLib 1.41 required, please update
 #endif
 
 #if defined (SWIGJAVA) || defined (SWIGCSHARP) 
@@ -89,9 +89,13 @@ GNU autoconf configure script.
 %rename(divide)        operator/;
 %rename(divide)        __div__;
 %rename(getValue)      operator();
-%rename(equals)        __eq__;
-%rename(unEquals)      __ne__;
+%rename(equals)        operator==;
+%rename(unEquals)      operator!=;
+%rename(compareTo)     __cmp__;
+%javamethodmodifiers   __cmp__ "@Override public"
+%rename(hashCode)      __hash__;
 %rename(toString)      __str__;
+%rename(repr)          __repr__;
 #elif defined(SWIGCSHARP)
 %rename(Add)           operator+;
 %rename(Add)           __add__;
@@ -173,11 +177,11 @@ QL_DEPRECATED_DISABLE_WARNING
 %include randomnumbers.i
 %include ratehelpers.i
 %include rounding.i
-%include sampledcurve.i
 %include scheduler.i
 %include settings.i
 %include shortratemodels.i
 %include slv.i
+%include spreaddiscountcurve.i
 %include spreadoption.i
 %include statistics.i
 %include stochasticprocess.i

@@ -1,0 +1,63 @@
+diff --git a/SWIG/linearalgebra.i b/SWIG/linearalgebra.i
+--- a/SWIG/linearalgebra.i
++++ b/SWIG/linearalgebra.i
+@@ -49,6 +49,11 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
+             } else if (PyLong_Check(o)) {
+                 (*target)[i] = PyLong_AsDouble(o);
+                 Py_DECREF(o);
++#ifdef QL_XAD
++            } else if (check_Real(o)) {
++                (*target)[i] = make_Real(o);
++                Py_DECREF(o);
++#endif
+             } else {
+                 Py_DECREF(o);
+                 return false;
+@@ -98,7 +103,11 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
+             $1 = 1;
+         } else {
+             PyObject* o = PySequence_GetItem($input,0);
++#ifdef QL_XAD
++            if (PyNumber_Check(o) || check_Real(o))
++#else
+             if (PyNumber_Check(o))
++#endif
+                 $1 = 1;
+             else
+                 $1 = 0;
+@@ -119,7 +128,11 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
+             $1 = 1;
+         } else {
+             PyObject* o = PySequence_GetItem($input,0);
++#ifdef QL_XAD
++            if (PyNumber_Check(o) || check_Real(o))
++#else
+             if (PyNumber_Check(o))
++#endif
+                 $1 = 1;
+             else
+                 $1 = 0;
+@@ -178,6 +191,11 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
+                     } else if (PyLong_Check(d)) {
+                         $1[i][j] = PyLong_AsDouble(d);
+                         Py_DECREF(d);
++#ifdef QL_XAD
++                    } else if (check_Real(d)) {
++                        $1[i][j] = make_Real(d);
++                        Py_DECREF(d);
++#endif
+                     } else {
+                         PyErr_SetString(PyExc_TypeError,"doubles expected");
+                         Py_DECREF(d);
+@@ -249,6 +267,11 @@ bool ArrayFromSequence(PyObject* source, Array* target) {
+                     } else if (PyLong_Check(d)) {
+                         temp[i][j] = PyLong_AsDouble(d);
+                         Py_DECREF(d);
++#ifdef QL_XAD
++                    } else if (check_Real(d)) {
++                        temp[i][j] = make_Real(d);
++                        Py_DECREF(d);
++#endif
+                     } else {
+                         PyErr_SetString(PyExc_TypeError,"doubles expected");
+                         Py_DECREF(d);

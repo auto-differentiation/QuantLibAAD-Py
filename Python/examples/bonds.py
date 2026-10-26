@@ -78,7 +78,7 @@ zcBondsDayCounter = ql.Actual365Fixed()
 
 zcHelpers = [
     ql.DepositRateHelper(
-        ql.QuoteHandle(ql.SimpleQuote(r)), tenor, fixingDays, calendar, ql.ModifiedFollowing, True, zcBondsDayCounter
+        ql.makeQuoteHandle(r), tenor, fixingDays, calendar, ql.ModifiedFollowing, True, zcBondsDayCounter
     )
     for (r, tenor) in zcQuotes
 ]
@@ -113,7 +113,7 @@ for issueDate, maturity, couponRate, marketQuote in bondQuotes:
     )
     bondsHelpers.append(
         ql.FixedRateBondHelper(
-            ql.QuoteHandle(ql.SimpleQuote(marketQuote)),
+            ql.makeQuoteHandle(marketQuote),
             settlementDays,
             100.0,
             schedule,
@@ -154,7 +154,7 @@ sQuotes = [
 depositDayCounter = ql.Actual360()
 depositHelpers = [
     ql.DepositRateHelper(
-        ql.QuoteHandle(ql.SimpleQuote(rate)), tenor, fixingDays, calendar, ql.ModifiedFollowing, True, depositDayCounter
+        ql.makeQuoteHandle(rate), tenor, fixingDays, calendar, ql.ModifiedFollowing, True, depositDayCounter
     )
     for rate, tenor in dQuotes
 ]
@@ -166,7 +166,7 @@ swFloatingLegIndex = ql.Euribor6M()
 forwardStart = ql.Period(1, ql.Days)
 swapHelpers = [
     ql.SwapRateHelper(
-        ql.QuoteHandle(ql.SimpleQuote(rate)),
+        ql.makeQuoteHandle(rate),
         tenor,
         calendar,
         swFixedLegFrequency,
@@ -326,9 +326,12 @@ floatingRateBond.cleanPrice(
 # Clean price to yield:
 
 floatingRateBond.bondYield(
-    floatingRateBond.cleanPrice(),
+    ql.BondPrice(
+        floatingRateBond.cleanPrice(),
+        ql.BondPrice.Clean,
+    ),
     ql.Actual360(),
     ql.Compounded,
     ql.Annual,
-    settlementDate
+    settlementDate,
 )

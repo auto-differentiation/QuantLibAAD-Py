@@ -14,7 +14,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -55,17 +55,24 @@ using QuantLib::CoxIngersollRoss;
 using QuantLib::ExtendedCoxIngersollRoss;
 %}
 
+%define AFFINE_METHODS
+    DiscountFactor discount(Time t) const;
+    Real discountBond(Time now,
+                      Time maturity,
+                      Array factors) const;
+    Real discountBondOption(Option::Type type,
+                            Real strike,
+                            Time maturity,
+                            Time bondMaturity) const;
+%enddef
+
 %shared_ptr(OneFactorAffineModel)
 class OneFactorAffineModel : public ShortRateModel {
   private:
     OneFactorAffineModel();
   public:
-    virtual Real discountBond(Time now,
-                          Time maturity,
-                          Array factors) const;
-
+    AFFINE_METHODS;
     Real discountBond(Time now, Time maturity, Rate rate) const;
-    DiscountFactor discount(Time t) const;  
 };
 
 %shared_ptr(Vasicek)
@@ -103,20 +110,21 @@ class BlackKarasinski : public ShortRateModel {
 };
 
 %shared_ptr(CoxIngersollRoss)
-class CoxIngersollRoss : public ShortRateModel {
+class CoxIngersollRoss : public OneFactorAffineModel {
   public:
     CoxIngersollRoss(Rate r0= 0.01, Real theta = 0.1, Real k = 0.1,
                      Real sigma = 0.1);
-    DiscountFactor discount(Time t) const;
 };
 
 %shared_ptr(ExtendedCoxIngersollRoss)
-class ExtendedCoxIngersollRoss : public ShortRateModel {
+class ExtendedCoxIngersollRoss : public CoxIngersollRoss {
   public:
     ExtendedCoxIngersollRoss(const Handle<YieldTermStructure>& termStructure,
                              Real theta = 0.1, Real k = 0.1,
                              Real sigma = 0.1, Real x0 = 0.05);
-    DiscountFactor discount(Time t) const;
+
+    // TermStructureConsistentModel
+    const Handle<YieldTermStructure>& termStructure() const;
 };
 
 %shared_ptr(G2)
@@ -128,6 +136,8 @@ class G2 : public ShortRateModel {
 
     // TermStructureConsistentModel
     const Handle<YieldTermStructure>& termStructure() const;
+
+    AFFINE_METHODS;
 };
 
 

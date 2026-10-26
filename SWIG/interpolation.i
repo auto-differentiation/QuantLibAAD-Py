@@ -13,7 +13,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -204,6 +204,38 @@ class LogMixedLinearCubic : public QuantLib::LogMixedLinearCubic {
         bool monotonic = true)
     : QuantLib::LogMixedLinearCubic(n, behavior, da, monotonic) {}
 };
+
+class ParabolicCubic : public QuantLib::Cubic {
+  public:
+    ParabolicCubic()
+    : QuantLib::Cubic(CubicInterpolation::Parabolic, false,
+                      CubicInterpolation::SecondDerivative, 0.0,
+                      CubicInterpolation::SecondDerivative, 0.0) {}
+};
+
+class MonotonicParabolicCubic : public QuantLib::Cubic {
+  public:
+    MonotonicParabolicCubic()
+    : QuantLib::Cubic(CubicInterpolation::Parabolic, true,
+                      CubicInterpolation::SecondDerivative, 0.0,
+                      CubicInterpolation::SecondDerivative, 0.0) {}
+};
+
+class LogParabolicCubic : public QuantLib::LogCubic {
+  public:
+    LogParabolicCubic()
+    : QuantLib::LogCubic(CubicInterpolation::Parabolic, false,
+                         CubicInterpolation::SecondDerivative, 0.0,
+                         CubicInterpolation::SecondDerivative, 0.0) {}
+};
+
+class MonotonicLogParabolicCubic : public QuantLib::LogCubic {
+  public:
+    MonotonicLogParabolicCubic()
+    : QuantLib::LogCubic(CubicInterpolation::Parabolic, true,
+                         CubicInterpolation::SecondDerivative, 0.0,
+                         CubicInterpolation::SecondDerivative, 0.0) {}
+};
 %}
 
 %nodefaultctor CubicInterpolation;
@@ -244,6 +276,10 @@ struct ConvexMonotone {
                    Real monotonicity = 0.7,
                    bool forcePositive = true);
 };
+struct ParabolicCubic {};
+struct MonotonicParabolicCubic {};
+struct LogParabolicCubic {};
+struct MonotonicLogParabolicCubic {};
 
 struct LogMixedLinearCubic {
     #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
@@ -254,88 +290,6 @@ struct LogMixedLinearCubic {
         MixedInterpolation::Behavior behavior = MixedInterpolation::ShareRanges,
         CubicInterpolation::DerivativeApprox da = CubicInterpolation::Spline,
         bool monotonic = true);
-};
-
-%{
-// safe version which copies its arguments
-class SafeSABRInterpolation {
-  public:
-    SafeSABRInterpolation(const Array& x, const Array& y,
-                          Time t,
-                          Real forward,
-                          Real alpha,
-                          Real beta,
-                          Real nu,
-                          Real rho,
-                          bool alphaIsFixed = false,
-                          bool betaIsFixed = false,
-                          bool nuIsFixed = false,
-                          bool rhoIsFixed = false,
-                          bool vegaWeighted = true,
-                          const ext::shared_ptr<EndCriteria>& endCriteria
-                                  = ext::shared_ptr<EndCriteria>(),
-                          const ext::shared_ptr<OptimizationMethod>& optMethod
-                                  = ext::shared_ptr<OptimizationMethod>(),
-                          const Real errorAccept=0.0020,
-                          const bool useMaxError=false,
-                          const Size maxGuesses=50,
-                          const Real shift = 0.0)
-    : x_(x), y_(y), forward_(forward),
-      f_(x_.begin(),x_.end(),y_.begin(),
-         t, forward_, alpha, beta, nu, rho,
-         alphaIsFixed, betaIsFixed,
-         nuIsFixed, rhoIsFixed,
-         vegaWeighted, endCriteria, optMethod,
-         errorAccept, useMaxError, maxGuesses, shift) {f_.update();}
-    Real operator()(Real x, bool allowExtrapolation=false) const {
-        return f_(x, allowExtrapolation);
-    }
-    Real alpha() const {return f_.alpha();}
-    Real beta() const {return f_.beta();}
-    Real rho() const {return f_.rho();}
-    Real nu() const {return f_.nu();}
-    
-  private:
-    Array x_, y_;  // passed via iterators, need to stay alive
-    Real forward_; // passed by reference, same
-    QuantLib::SABRInterpolation f_;
-};
-%}
-
-%rename(SABRInterpolation) SafeSABRInterpolation;
-class SafeSABRInterpolation {
-    #if defined(SWIGCSHARP)
-    %rename(call) operator();
-    #endif
-    #if !defined(SWIGJAVA) && !defined(SWIGCSHARP)
-    %feature("kwargs") SafeSABRInterpolation;
-    #endif
-  public:
-    SafeSABRInterpolation(const Array& x, const Array& y,
-                          Time t,
-                          Real forward,
-                          Real alpha,
-                          Real beta,
-                          Real nu,
-                          Real rho,
-                          bool alphaIsFixed = false,
-                          bool betaIsFixed = false,
-                          bool nuIsFixed = false,
-                          bool rhoIsFixed = false,
-                          bool vegaWeighted = true,
-                          const ext::shared_ptr<EndCriteria>& endCriteria
-                                  = ext::shared_ptr<EndCriteria>(),
-                          const ext::shared_ptr<OptimizationMethod>& optMethod
-                                  = ext::shared_ptr<OptimizationMethod>(),
-                          const Real errorAccept=0.0020,
-                          const bool useMaxError=false,
-                          const Size maxGuesses=50,
-                          const Real shift = 0.0);
-    Real operator()(Real x, bool allowExtrapolation=false) const;
-    Real alpha() const;
-    Real beta() const;
-    Real rho() const;
-    Real nu() const;
 };
 
 

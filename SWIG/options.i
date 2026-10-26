@@ -16,7 +16,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -200,12 +200,6 @@ class VanillaOption : public OneAssetOption {
                          Size maxEvaluations = 100,
                          Volatility minVol = 1.0e-4,
                          Volatility maxVol = 4.0);
-
-    %extend{
-        SampledCurve priceCurve() {
-            return self->result<SampledCurve>("priceCurve");
-        }
-    }
 };
 
 %template(CalibrationPair) std::pair< ext::shared_ptr<VanillaOption>, ext::shared_ptr<Quote> >;
@@ -307,12 +301,13 @@ using QuantLib::HestonModel;
 %shared_ptr(HestonModel)
 class HestonModel : public CalibratedModel {
   public:
-    HestonModel(const ext::shared_ptr<HestonProcess>&  process);
+    HestonModel(const ext::shared_ptr<HestonProcess>& process);
     Real theta() const;
     Real kappa() const;
     Real sigma() const;
     Real rho() const;
     Real v0() const;
+    ext::shared_ptr<HestonProcess> process() const;
 };
 
 %template(HestonModelHandle) Handle<HestonModel>;
@@ -497,6 +492,19 @@ class AnalyticPTDHestonEngine : public PricingEngine {
         Real andersenPiterbargEpsilon = 1e-8);            
 };
 
+%{
+using QuantLib::AnalyticPDFHestonEngine;
+%}
+
+%shared_ptr(AnalyticPDFHestonEngine)
+class AnalyticPDFHestonEngine : public PricingEngine {
+  public:
+    AnalyticPDFHestonEngine(ext::shared_ptr<HestonModel> model,
+                            Real gaussLobattoEps = 1e-6,
+                            Size gaussLobattoIntegrationOrder = 10000UL);
+};
+
+
 
 #if defined(SWIGPYTHON)
 %rename(lambda_parameter) lambda;
@@ -509,10 +517,15 @@ using QuantLib::BatesModel;
 %shared_ptr(BatesModel)
 class BatesModel : public HestonModel {
   public:
-    BatesModel(const ext::shared_ptr<BatesProcess>&  process);
+    BatesModel(const ext::shared_ptr<BatesProcess>& process);
     Real nu() const;
     Real delta() const;
     Real lambda() const;
+    %extend {
+        ext::shared_ptr<BatesProcess> process() {
+            return ext::dynamic_pointer_cast<BatesProcess>(self->process());
+        }
+    }
 };
 
 
@@ -969,43 +982,7 @@ class AnalyticDigitalAmericanKOEngine : public PricingEngine {
             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process);
 };
 
-// Dividend option
-
-%{
-using QuantLib::DividendVanillaOption;
-%}
-
-
-#if defined(SWIGR)
-%Rruntime %{
-setMethod("summary", "_p_DividendVanillaOption",
-function(object) {object$freeze()
-ans <- c(value=object$NPV(), delta=object$delta(),
-gamma=object$gamma(), vega=object$vega(),
-theta=object$theta(), rho=object$rho(),
-divRho=object$dividendRho())
-object$unfreeze()
-ans
-})
-%}
-#endif
-
-%shared_ptr(DividendVanillaOption)
-class DividendVanillaOption : public OneAssetOption {
-  public:
-    DividendVanillaOption(
-            const ext::shared_ptr<StrikedTypePayoff>& payoff,
-            const ext::shared_ptr<Exercise>& exercise,
-            const std::vector<Date>& dividendDates,
-            const std::vector<Real>& dividends);
-    Volatility impliedVolatility(
-                         Real targetValue,
-                         const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-                         Real accuracy = 1.0e-4,
-                         Size maxEvaluations = 100,
-                         Volatility minVol = 1.0e-4,
-                         Volatility maxVol = 4.0);
-};
+// Dividend option engine
 
 
 %{
@@ -1016,11 +993,26 @@ using QuantLib::AnalyticDividendEuropeanEngine;
 class AnalyticDividendEuropeanEngine : public PricingEngine {
   public:
     AnalyticDividendEuropeanEngine(
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process);
-    AnalyticDividendEuropeanEngine(
             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
             DividendSchedule dividends);
 };
+
+%{
+using QuantLib::CashDividendEuropeanEngine;
+%}
+
+%shared_ptr(CashDividendEuropeanEngine)
+class CashDividendEuropeanEngine : public PricingEngine {
+  public:
+    enum CashDividendModel { Spot, Escrowed };
+
+    CashDividendEuropeanEngine(
+        const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
+        DividendSchedule dividends,
+        CashDividendModel cashDividendModel = Spot);
+};
+
+
 
 %{
 using QuantLib::QdPlusAmericanEngine;
@@ -1657,10 +1649,44 @@ class BlackCalculator {
     Real itmAssetProbability() const;
     Real strikeSensitivity() const;
     Real strikeGamma() const;
+	Real vanna(Real spot, Time maturity) const;
+    Real volga(Time maturity) const;
     Real alpha() const;
     Real beta() const;
 };
 
+
+%{
+using QuantLib::BachelierCalculator;
+%}
+
+class BachelierCalculator {
+  public:
+    BachelierCalculator(const ext::shared_ptr<StrikedTypePayoff>& payoff,
+                    Real forward,
+                    Real stdDev,
+                    Real discount = 1.0);
+    Real value() const;
+    Real deltaForward() const;
+    Real delta(Real spot) const;
+    Real elasticityForward() const;
+    Real elasticity(Real spot) const;
+    Real gammaForward() const;
+    Real gamma(Real spot) const;
+    Real theta(Real spot, Time maturity) const;
+    Real thetaPerDay(Real spot, Time maturity) const;
+    Real vega(Time maturity) const;
+    Real rho(Time maturity) const;
+    Real dividendRho(Time maturity) const;
+    Real itmCashProbability() const;
+    Real itmAssetProbability() const;
+    Real strikeSensitivity() const;
+    Real strikeGamma() const;
+	Real vanna(Time maturity) const;
+    Real volga(Time maturity) const;
+    Real alpha() const;
+    Real beta() const;
+};
 
 
 
@@ -1693,14 +1719,15 @@ using QuantLib::GJRGARCHModel;
 
 %shared_ptr(GJRGARCHModel)
 class GJRGARCHModel : public CalibratedModel {
-      public:
-        GJRGARCHModel(const ext::shared_ptr<GJRGARCHProcess>& process);
-        Real omega() const;
-        Real alpha() const;
-        Real beta() const;
-        Real gamma() const;
-        Real lambda() const;
-        Real v0() const;
+  public:
+    GJRGARCHModel(const ext::shared_ptr<GJRGARCHProcess>& process);
+    Real omega() const;
+    Real alpha() const;
+    Real beta() const;
+    Real gamma() const;
+    Real lambda() const;
+    Real v0() const;
+    ext::shared_ptr<GJRGARCHProcess> process() const;
 };
 
 
@@ -1881,5 +1908,75 @@ class AnalyticComplexChooserEngine : public PricingEngine {
     AnalyticComplexChooserEngine(ext::shared_ptr<GeneralizedBlackScholesProcess> process);
 };
 
+
+%{
+using QuantLib::HolderExtensibleOption;
+using QuantLib::AnalyticHolderExtensibleOptionEngine;
+%}
+
+%shared_ptr(HolderExtensibleOption)
+class HolderExtensibleOption : public OneAssetOption {
+  public:
+    HolderExtensibleOption(Option::Type type,
+                           Real premium,
+                           Date secondExpiryDate,
+                           Real secondStrike,
+                           const ext::shared_ptr<StrikedTypePayoff>& payoff,
+                           const ext::shared_ptr<Exercise>& exercise);
+};
+
+%shared_ptr(AnalyticHolderExtensibleOptionEngine)
+class AnalyticHolderExtensibleOptionEngine : public PricingEngine {
+  public:
+    AnalyticHolderExtensibleOptionEngine(
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process);
+};
+
+
+%{
+using QuantLib::WriterExtensibleOption;
+using QuantLib::AnalyticWriterExtensibleOptionEngine;
+%}
+
+%shared_ptr(WriterExtensibleOption)
+class WriterExtensibleOption : public OneAssetOption {
+  public:
+    WriterExtensibleOption(const ext::shared_ptr<PlainVanillaPayoff>& payoff1,
+                           const ext::shared_ptr<Exercise>& exercise1,
+                           const ext::shared_ptr<PlainVanillaPayoff>& payoff2,
+                           ext::shared_ptr<Exercise> exercise2);
+    ext::shared_ptr<Payoff> payoff2() { return payoff2_; }
+    ext::shared_ptr<Exercise> exercise2() { return exercise2_; };
+};
+
+%shared_ptr(AnalyticWriterExtensibleOptionEngine)
+class AnalyticWriterExtensibleOptionEngine : public PricingEngine {
+  public:
+    AnalyticWriterExtensibleOptionEngine(
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process);
+};
+
+
+%{
+using QuantLib::TwoAssetCorrelationOption;
+using QuantLib::AnalyticTwoAssetCorrelationEngine;
+%}
+
+%shared_ptr(TwoAssetCorrelationOption)
+class TwoAssetCorrelationOption : public MultiAssetOption {
+  public:
+    TwoAssetCorrelationOption(Option::Type type,
+                              Real strike1,
+                              Real strike2,
+                              const ext::shared_ptr<Exercise>&);
+};
+
+%shared_ptr(AnalyticTwoAssetCorrelationEngine)
+class AnalyticTwoAssetCorrelationEngine : public PricingEngine {
+  public:
+    AnalyticTwoAssetCorrelationEngine(ext::shared_ptr<GeneralizedBlackScholesProcess> p1,
+                                      ext::shared_ptr<GeneralizedBlackScholesProcess> p2,
+                                      Handle<Quote> correlation);
+};
 
 #endif

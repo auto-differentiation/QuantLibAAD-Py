@@ -11,7 +11,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -34,7 +34,6 @@ struct Barrier {
 
 %{
 using QuantLib::BarrierOption;
-using QuantLib::DividendBarrierOption;
 using QuantLib::QuantoBarrierOption;
 %}
 
@@ -79,8 +78,8 @@ class QuantoBarrierOption : public BarrierOption {
 using QuantLib::PartialBarrier;
 %}
 
-struct PartialBarrier : public Barrier {
-    enum Range { Start, End, EndB1, EndB2 };
+struct PartialBarrier {
+    enum Range { Start = 0, EndB1 = 2, EndB2 = 3 };
 };
 
 %{
@@ -90,7 +89,8 @@ using QuantLib::PartialTimeBarrierOption;
 %shared_ptr(PartialTimeBarrierOption)
 class PartialTimeBarrierOption : public OneAssetOption {
       public:
-        PartialTimeBarrierOption(PartialBarrier::Type barrierType,
+        PartialTimeBarrierOption(
+            Barrier::Type barrierType,
             PartialBarrier::Range barrierRange,
             Real barrier,
             Real rebate,
@@ -110,21 +110,7 @@ using QuantLib::AnalyticPartialTimeBarrierOptionEngine;
 class AnalyticPartialTimeBarrierOptionEngine : public PricingEngine {
   public:
     AnalyticPartialTimeBarrierOptionEngine (
-                           const ext::shared_ptr<GeneralizedBlackScholesProcess>& process
-                 );
-};
-
-
-%shared_ptr(DividendBarrierOption)
-class DividendBarrierOption : public BarrierOption {
-  public:
-    DividendBarrierOption(Barrier::Type barrierType,
-                          Real barrier,
-                          Real rebate,
-                          const ext::shared_ptr<StrikedTypePayoff>& payoff,
-                          const ext::shared_ptr<Exercise>& exercise,
-                          const std::vector<Date>& dividendDates,
-                          const std::vector<Real>& dividends);
+        const ext::shared_ptr<GeneralizedBlackScholesProcess>& process);
 };
 
 
@@ -598,5 +584,59 @@ class BinomialDoubleBarrierEngine : public PricingEngine {
 #endif
 
 #endif
+
+
+%{
+using QuantLib::TwoAssetBarrierOption;
+using QuantLib::AnalyticTwoAssetBarrierEngine;
+%}
+
+%shared_ptr(TwoAssetBarrierOption)
+class TwoAssetBarrierOption : public Option {
+  public:
+    TwoAssetBarrierOption(Barrier::Type barrierType,
+                          Real barrier,
+                          const ext::shared_ptr<StrikedTypePayoff>& payoff,
+                          const ext::shared_ptr<Exercise>& exercise);
+};
+
+%shared_ptr(AnalyticTwoAssetBarrierEngine)
+class AnalyticTwoAssetBarrierEngine : public PricingEngine {
+  public:
+    AnalyticTwoAssetBarrierEngine(ext::shared_ptr<GeneralizedBlackScholesProcess> process1,
+                                  ext::shared_ptr<GeneralizedBlackScholesProcess> process2,
+                                  Handle<Quote> rho);
+};
+
+
+%{
+using QuantLib::SoftBarrierOption;
+using QuantLib::AnalyticSoftBarrierEngine;
+%}
+
+%shared_ptr(SoftBarrierOption)
+class SoftBarrierOption : public OneAssetOption {
+  public:
+    SoftBarrierOption(Barrier::Type barrierType,
+                      Real barrier_lo,
+                      Real barrier_hi,
+                      const ext::shared_ptr<StrikedTypePayoff>& payoff,
+                      const ext::shared_ptr<Exercise>& exercise);
+
+    Volatility impliedVolatility(
+             Real price,
+             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
+             Real accuracy = 1.0e-4,
+             Size maxEvaluations = 100,
+             Volatility minVol = 1e-6,
+             Volatility maxVol = 4.0) const;
+};
+
+%shared_ptr(AnalyticSoftBarrierEngine)
+class AnalyticSoftBarrierEngine : public PricingEngine {
+  public:
+    AnalyticSoftBarrierEngine(ext::shared_ptr<GeneralizedBlackScholesProcess> process);
+};
+
 
 #endif

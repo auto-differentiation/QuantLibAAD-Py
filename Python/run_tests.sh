@@ -28,7 +28,7 @@ set -e
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-python "${SCRIPT_DIR}/test/QuantLibTestSuite.py"
+python -m pytest -p no:cacheprovider --import-mode=importlib "${SCRIPT_DIR}/test"
 
 cd "${SCRIPT_DIR}/examples"
 

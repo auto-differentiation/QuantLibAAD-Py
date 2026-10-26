@@ -11,7 +11,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -67,15 +67,13 @@ const char* __version__;
 %include stl.i
 
 #if defined(JAVA_AUTOCLOSEABLE)
-%typemap(javaimports) SWIGTYPE %{
-import java.lang.AutoCloseable;
-%}
-%typemap(javainterfaces) SWIGTYPE "AutoCloseable";
+#define QL_JAVA_INTERFACES "AutoCloseable, "
+%typemap(javainterfaces) SWIGTYPE "AutoCloseable"
 %extend std::vector {
-    %typemap(javainterfaces) std::vector "AutoCloseable, java.util.RandomAccess";
+    %typemap(javainterfaces) std::vector QL_JAVA_INTERFACES "java.util.RandomAccess"
 };
 %extend std::vector<bool> {
-    %typemap(javainterfaces) std::vector "AutoCloseable, java.util.RandomAccess"
+    %typemap(javainterfaces) std::vector QL_JAVA_INTERFACES "java.util.RandomAccess"
 }
 %typemap(javacode) SWIGTYPE %{
   @Override
@@ -83,6 +81,10 @@ import java.lang.AutoCloseable;
    this.delete();
   }
 %}
+#else
+#if !defined(QL_JAVA_INTERFACES)
+#define QL_JAVA_INTERFACES
+#endif
 #endif
 
 #if !defined(JAVA_FINALIZER)
@@ -92,5 +94,9 @@ import java.lang.AutoCloseable;
 #if defined(SWIGPYTHON)
 %feature("autodoc");
 #endif
+
+%begin %{
+#define SWIG_PYTHON_INTERPRETER_NO_DEBUG
+%}
 
 %include ql.i

@@ -78,7 +78,7 @@ exerciseDate = todaysDate + ql.Period(4, ql.Years)
 dc = ql.Actual365Fixed()
 
 spot = 100
-underlying = ql.QuoteHandle(ql.SimpleQuote(spot))
+underlying = ql.makeQuoteHandle(spot)
 
 riskFreeRate = ql.YieldTermStructureHandle(ql.FlatForward(settlementDate, 0.05, dc))
 dividendYield = ql.YieldTermStructureHandle(ql.FlatForward(settlementDate, 0.025, dc))
@@ -132,7 +132,7 @@ ax.view_init(30, -120)
 
 ax.set_xlabel("ln(S)")
 ax.set_ylabel("Time")
-ax.text2D(0.225, 0.985, "Leverage Function with $\eta=1.0$", transform=ax.transAxes)
+ax.text2D(0.225, 0.985, r"Leverage Function with $\eta=1.0$", transform=ax.transAxes)
 
 fig.colorbar(surf, shrink=0.75, aspect=14)
 

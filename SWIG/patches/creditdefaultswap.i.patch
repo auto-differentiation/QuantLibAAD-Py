@@ -1,0 +1,12 @@
+diff --git a/SWIG/creditdefaultswap.i b/SWIG/creditdefaultswap.i
+--- a/SWIG/creditdefaultswap.i
++++ b/SWIG/creditdefaultswap.i
+@@ -110,7 +110,7 @@ class CreditDefaultSwap : public Instrument {
+             if (result)
+                 return *result;
+             else
+-                return Null<double>();
++                return Null<Real>();
+         }
+     }
+     bool settlesAccrual() const;

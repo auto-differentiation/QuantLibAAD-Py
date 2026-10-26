@@ -9,7 +9,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -61,7 +61,7 @@ typedef Real Probability;
 #if defined(SWIGPYTHON)
 // needed for those using SWIG 1.3.21 in order to compile with VC++6
 %typecheck(SWIG_TYPECHECK_INTEGER) std::size_t {
-    $1 = (PyInt_Check($input) || PyLong_Check($input)) ? 1 : 0;
+    $1 = PyLong_Check($input) ? 1 : 0;
 }
 #endif
 

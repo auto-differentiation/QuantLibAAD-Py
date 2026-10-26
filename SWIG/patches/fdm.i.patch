@@ -1,0 +1,97 @@
+diff --git a/SWIG/fdm.i b/SWIG/fdm.i
+--- a/SWIG/fdm.i
++++ b/SWIG/fdm.i
+@@ -98,9 +98,17 @@ class FdmBlackScholesMesher : public Fdm1dMesher {
+          Volatility vol);
+ };
+ 
++#ifndef QL_XAD
++
+ %template(Concentrating1dMesherPoint) std::tuple<Real, Real, bool>;
+ %template(Concentrating1dMesherPointVector) std::vector<std::tuple<Real, Real, bool> >;
+ 
++#else
++
++%include fdm_extra.i
++
++#endif
++
+ 
+ %shared_ptr(Concentrating1dMesher)
+ class Concentrating1dMesher : public Fdm1dMesher {
+@@ -398,7 +406,13 @@ class FdmLinearOpCompositeProxy : public FdmLinearOpComposite {
+ 
+     void setTime(Time t1, Time t2) {
+         PyPtr::fromResult(
++#ifdef QL_XAD
++            PyObject_CallMethod(callback_.get(), "setTime", "OO",
++                                PyPtr::fromNew(make_PyObject(t1)).get(),
++                                PyPtr::fromNew(make_PyObject(t2)).get()),
++#else
+             PyObject_CallMethod(callback_.get(), "setTime", "dd", t1, t2),
++#endif
+             "failed to call setTime() on Python object");
+     }
+ 
+@@ -426,8 +440,14 @@ class FdmLinearOpCompositeProxy : public FdmLinearOpComposite {
+             SWIG_as_voidptr(&r), SWIGTYPE_p_Array, 0));
+ 
+         auto pyResult = PyPtr::fromNew(
++#ifdef QL_XAD
++            PyObject_CallMethod(callback_.get(), "solve_splitting", "kOO",
++                                (unsigned long)direction, pyArray.get(),
++                                PyPtr::fromNew(make_PyObject(s)).get()));
++#else
+             PyObject_CallMethod(callback_.get(), "solve_splitting", "kOd",
+                                 (unsigned long)direction, pyArray.get(), s));
++#endif
+ 
+         return extractArray(pyResult.get(), "solve_splitting");
+     }
+@@ -437,8 +457,13 @@ class FdmLinearOpCompositeProxy : public FdmLinearOpComposite {
+             SWIG_as_voidptr(&r), SWIGTYPE_p_Array, 0));
+ 
+         auto pyResult = PyPtr::fromNew(
++#ifdef QL_XAD
++            PyObject_CallMethod(callback_.get(), "preconditioner", "OO",
++                                pyArray.get(), PyPtr::fromNew(make_PyObject(s)).get()));
++#else
+             PyObject_CallMethod(callback_.get(), "preconditioner", "Od",
+                                 pyArray.get(), s));
++#endif
+ 
+         return extractArray(pyResult.get(), "preconditioner");
+     }
+@@ -1097,7 +1122,12 @@ class FdmStepConditionProxy : public StepCondition<Array> {
+             SWIG_as_voidptr(&a), SWIGTYPE_p_Array, 0));
+ 
+         PyPtr::fromResult(
++#ifdef QL_XAD
++            PyObject_CallMethod(callback_.get(), "applyTo", "OO", pyArray.get(),
++                                PyPtr::fromNew(make_PyObject(t)).get()),
++#else
+             PyObject_CallMethod(callback_.get(), "applyTo", "Od", pyArray.get(), t),
++#endif
+             "failed to call applyTo() on Python object");
+     }
+     
+@@ -1187,10 +1217,19 @@ class FdmInnerValueCalculatorProxy : public FdmInnerValueCalculator {
+             SWIG_as_voidptr(&iter), SWIGTYPE_p_FdmLinearOpIterator, 0));
+ 
+         auto pyResult = PyPtr::fromResult(
++#ifdef QL_XAD
++            PyObject_CallMethod(callback_.get(), methodName, "OO", pyIter.get(),
++                                PyPtr::fromNew(make_PyObject(t)).get()),
++#else
+             PyObject_CallMethod(callback_.get(), methodName, "Od", pyIter.get(), t),
++#endif
+             "failed to call " + std::string(methodName) + "() on Python object");
+ 
++#ifdef QL_XAD
++        return make_Real(pyResult.get());
++#else
+         return PyFloat_AsDouble(pyResult.get());
++#endif
+       }
+             
+     PyPtr callback_;

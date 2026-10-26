@@ -30,13 +30,10 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 """
 
+import math
 import unittest
 
 import QuantLib_Risks as ql
-if ql.XAD_ENABLED:
-    from xad import math
-else:
-    import math
 
 
 class ExtrapolationTest(unittest.TestCase):

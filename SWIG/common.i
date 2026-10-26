@@ -9,7 +9,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -30,6 +30,7 @@
 %include boost_shared_ptr.i
 
 %define QL_TYPECHECK_BOOL       7210    %enddef
+%define QL_TYPECHECK_INTEGER       7220    %enddef
 
 %{
 // This is necessary to avoid compile failures on 
@@ -45,23 +46,43 @@
 
 #if defined(SWIGPYTHON)
 %typemap(in) ext::optional<bool> %{
-	if($input == Py_None)
-		$1 = ext::nullopt;
-	else if ($input == Py_True)
-		$1 = true;
-	else
-		$1 = false;
+    if ($input == Py_None)
+        $1 = ext::nullopt;
+    else if (PyBool_Check($input))
+        $1 = $input == Py_True;
+    else
+        SWIG_exception(SWIG_TypeError, "bool expected");
 %}
-%typecheck (QL_TYPECHECK_BOOL) ext::optional<bool> {
-if (PyBool_Check($input) || Py_None == $input) 
-	$1 = 1;
-else
-	$1 = 0;
-}
+%typecheck (QL_TYPECHECK_BOOL) ext::optional<bool> %{
+    $1 = (PyBool_Check($input) || $input == Py_None) ? 1 : 0;
+%}
+%typemap(out) ext::optional<bool> %{
+    $result = !$1 ? Py_None : *$1 ? Py_True : Py_False;
+    Py_INCREF($result);
+%}
+
+%typemap(in) ext::optional<Integer> %{
+    if ($input == Py_None)
+        $1 = ext::nullopt;
+    else if (PyLong_Check($input))
+        $1 = PyLong_AsLong($input);
+    else
+        SWIG_exception(SWIG_TypeError, "int expected");
+%}
+%typecheck (QL_TYPECHECK_INTEGER) ext::optional<Integer> %{
+    $1 = (PyLong_Check($input) || $input == Py_None) ? 1 : 0;
+%}
+%typemap(out) ext::optional<Integer> %{
+    $result = !$1 ? Py_None : PyLong_FromLong(*$1);
+    Py_INCREF($result);
+%}
 #else
 #if defined(SWIGCSHARP)
 %typemap(cscode) ext::optional<bool> %{
     public static implicit operator OptionalBool(bool b) => new OptionalBool(b);
+%}
+%typemap(cscode) ext::optional<Integer> %{
+    public static implicit operator OptionalInteger(int i) => new OptionalInteger(i);
 %}
 #endif
 namespace ext {
@@ -72,6 +93,7 @@ namespace ext {
     };
 }
 %template(OptionalBool) ext::optional<bool>;
+%template(OptionalInteger) ext::optional<Integer>;
 #endif
 
 %{
@@ -88,9 +110,6 @@ namespace ext {
             return (*self).operator->();
         }
         #if defined(SWIGPYTHON)
-        bool __nonzero__() {
-            return !!(*self);
-        }
         bool __bool__() {
             return !!(*self);
         }
@@ -106,14 +125,12 @@ namespace ext {
 template <class T>
 class Handle {
   public:
-  Handle(const ext::shared_ptr<T>& = ext::shared_ptr<T>());
+    Handle();
+    explicit Handle(const ext::shared_ptr<T>& p, bool registerAsObserver = true);
     ext::shared_ptr<T> operator->();
     ext::shared_ptr<T> currentLink();
     #if defined(SWIGPYTHON)
     %extend {
-        bool __nonzero__() {
-            return !self->empty();
-        }
         bool __bool__() {
             return !self->empty();
         }
@@ -126,14 +143,10 @@ class Handle {
 template <class T>
 class RelinkableHandle : public Handle<T> {
   public:
-    RelinkableHandle(const ext::shared_ptr<T>& = ext::shared_ptr<T>());
-    void linkTo(const ext::shared_ptr<T>&);
-    %extend {
-        // could be defined in C++ class, added here in the meantime
-        void reset() {
-            self->linkTo(ext::shared_ptr<T>());
-        }
-    }
+    RelinkableHandle();
+    explicit RelinkableHandle(const ext::shared_ptr<T>& p, bool registerAsObserver = true);
+    void linkTo(const ext::shared_ptr<T>& h, bool registerAsObserver = true);
+    void reset();
 };
 
 %define swigr_list_converter(ContainerRType,
@@ -156,17 +169,101 @@ a
 #endif
 %enddef
 
+%inline %{
+#if defined(SWIGPYTHON)
+// This should be Py_hash_t, but SWIG does not know this type.
+typedef long hash_t;
+#else
+typedef int hash_t;
+#endif
+%}
 
 %define deprecate_feature(OldName, NewName)
 #if defined(SWIGPYTHON)
 %pythoncode %{
 def OldName(*args, **kwargs):
     from warnings import warn
-    warn('%s is deprecated; use %s' % (OldName.__name__, NewName.__name__))
+    warn(f'{OldName.__name__} is deprecated; use {NewName.__name__}', FutureWarning, stacklevel=2)
     return NewName(*args, **kwargs)
 %}
 #endif
 %enddef
 
+%{
+#if defined(SWIGPYTHON)
+#include <stdexcept>
+#include <string_view>
+
+class PyPtr {
+  public:
+    static PyPtr fromResult(PyObject* ptr, std::string_view errorMsg) {
+        if (!ptr)
+            throw std::runtime_error(errorMsg.data());
+        return PyPtr(ptr);
+    }
+
+    static PyPtr fromBorrowed(PyObject* ptr) {
+        Py_INCREF(ptr);
+        return PyPtr(ptr);
+    }
+
+    static PyPtr fromNew(PyObject* ptr) { return PyPtr(ptr); }
+
+    constexpr PyPtr() noexcept : ptr_(nullptr) {}
+    constexpr PyPtr(std::nullptr_t) noexcept : ptr_(nullptr) {}
+
+    PyPtr(const PyPtr& other) noexcept : ptr_(other.ptr_) {
+        Py_XINCREF(ptr_);
+    }
+
+    PyPtr(PyPtr&& other) noexcept : ptr_(other.release()) {}
+
+    ~PyPtr() {
+        Py_XDECREF(ptr_);
+    }
+
+    PyPtr& operator=(const PyPtr& other) {
+        Py_XINCREF(other.ptr_);
+        auto prevPtr = std::exchange(ptr_, other.ptr_);
+        Py_XDECREF(prevPtr);
+        return *this;
+    }
+
+    PyPtr& operator=(PyPtr&& other) {
+        auto newPtr = other.release();
+        auto prevPtr = std::exchange(ptr_, newPtr);
+        Py_XDECREF(prevPtr);
+        return *this;
+    }
+
+    PyObject* get() const noexcept {
+        return ptr_;
+    }
+
+    explicit operator bool() const noexcept {
+        return ptr_ != nullptr;
+    }
+
+    [[nodiscard]] PyObject* release() noexcept {
+        return std::exchange(ptr_, nullptr);
+    }
+
+    void reset() {
+        Py_CLEAR(ptr_);
+    }
+
+  private:
+    // NOTE: takes ownership of the passed pointer.
+    explicit PyPtr(PyObject* ptr) noexcept : ptr_(ptr) {}
+
+    PyObject* ptr_;
+};
+
+#define cpp_deprecate_feature(OldName, NewName) \
+    PyErr_WarnEx(PyExc_FutureWarning, (#OldName " is deprecated; use " #NewName), 1)
+#else
+#define cpp_deprecate_feature(OldName, NewName)
+#endif
+%}
 
 #endif

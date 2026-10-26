@@ -1,0 +1,35 @@
+diff --git a/SWIG/ode.i b/SWIG/ode.i
+--- a/SWIG/ode.i
++++ b/SWIG/ode.i
+@@ -70,10 +70,19 @@ class OdeFct {
+     const std::vector<Real> operator()(Real x, const std::vector<Real>& y) const {
+         auto pyY = PyPtr::fromResult(PyList_New(y.size()), "failed to convert arguments");
+         for (Size i=0; i < y.size(); ++i)
++#ifdef QL_XAD
++            PyList_SetItem(pyY.get(), i, make_PyObject(y[i]));
++
++        auto pyResult = PyPtr::fromResult(
++            PyObject_CallFunctionObjArgs(function_.get(),
++                                         PyPtr::fromNew(make_PyObject(x)).get(),
++                                         pyY.get(), NULL),
++#else
+             PyList_SetItem(pyY.get(), i, PyFloat_FromDouble(y[i]));
+ 
+         auto pyResult = PyPtr::fromResult(
+             PyObject_CallFunction(function_.get(), "dO", x, pyY.get()),
++#endif
+             "failed to call Python function");
+ 
+         QL_ENSURE(
+@@ -82,7 +91,11 @@ class OdeFct {
+ 
+         std::vector<Real> retVal(y.size());
+         for (Size i=0; i < y.size(); ++i)
++#ifdef QL_XAD
++            retVal[i] = make_Real(PyList_GetItem(pyResult.get(), i));
++#else
+             retVal[i] = PyFloat_AsDouble(PyList_GetItem(pyResult.get(), i));
++#endif
+ 
+         return retVal;
+     }

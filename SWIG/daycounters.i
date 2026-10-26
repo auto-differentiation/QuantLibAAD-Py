@@ -12,7 +12,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -42,25 +42,23 @@ class DayCounter {
                       const Date& startRef = Date(),
                       const Date& endRef = Date()) const;
     std::string name() const;
+    bool empty();
     %extend {
         std::string __str__() {
             return self->name()+" day counter";
         }
         #if defined(SWIGPYTHON) || defined(SWIGJAVA)
-        bool __eq__(const DayCounter& other) {
+        bool operator==(const DayCounter& other) {
             return (*self) == other;
         }
-        bool __ne__(const DayCounter& other) {
+        bool operator!=(const DayCounter& other) {
             return (*self) != other;
+        }
+        hash_t __hash__() {
+            return self->empty() ? 0 : std::hash<std::string>()(self->name());
         }
         #endif
     }
-    #if defined(SWIGPYTHON)
-    %pythoncode %{
-    def __hash__(self):
-        return hash(self.name())
-    %}
-    #endif
 };
 
 namespace QuantLib {

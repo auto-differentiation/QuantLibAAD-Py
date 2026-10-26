@@ -10,7 +10,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -40,19 +40,16 @@ struct DateGeneration {
 };
 #if defined(SWIGPYTHON)
 %typemap(in) ext::optional<DateGeneration::Rule> %{
-    if($input == Py_None)
+    if ($input == Py_None)
         $1 = ext::nullopt;
-    else if (PyInt_Check($input))
-        $1 = (DateGeneration::Rule) PyInt_AsLong($input);
+    else if (PyLong_Check($input))
+        $1 = (DateGeneration::Rule)PyLong_AsLong($input);
     else
-        $1 = (DateGeneration::Rule) PyLong_AsLong($input);
+        SWIG_exception(SWIG_TypeError, "int expected");
 %}
-%typecheck (QL_TYPECHECK_DATEGENERATION) ext::optional<DateGeneration::Rule> {
-if (PyInt_Check($input) || PyLong_Check($input) || Py_None == $input)
-    $1 = 1;
-else
-    $1 = 0;
-}
+%typecheck (QL_TYPECHECK_DATEGENERATION) ext::optional<DateGeneration::Rule> %{
+    $1 = (PyLong_Check($input) || $input == Py_None) ? 1 : 0;
+%}
 #endif
 
 class Schedule {

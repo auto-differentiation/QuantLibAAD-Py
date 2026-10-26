@@ -1,9 +1,4 @@
-# Compilation artifacts
-Python/QuantLib/quantlib_wrap.cpp
-Python/.cache/
-Python/QuantLib.egg-info
-Python/QuantLib_Python.egg-info
-Python/dist
+# Notebooks generated from the examples
 Python/examples/*.ipynb
 Python/examples/.ipynb_checkpoints
 
@@ -53,12 +48,13 @@ testCaseCollection.xml
 *.idb
 *.ipch
 
-# Outputs
-Python/QuantLib_Risks/QuantLib_Risks.py
-Python/build
+# Build outputs (scikit-build-core, uv build, cibuildwheel)
+/build
+/dist
+/wheelhouse
+.pytest_cache/
 
 .vscode
 **/venv
-/build
 **/.venv
 __pycache__

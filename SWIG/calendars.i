@@ -13,7 +13,7 @@
  under the terms of the QuantLib license.  You should have received a
  copy of the license along with this program; if not, please email
  <quantlib-dev@lists.sf.net>. The license is also available online at
- <http://quantlib.org/license.shtml>.
+ <https://www.quantlib.org/license.shtml>.
 
  This program is distributed in the hope that it will be useful, but WITHOUT
  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
@@ -64,19 +64,16 @@ enum JointCalendarRule { JoinHolidays, JoinBusinessDays };
 
 #if defined(SWIGPYTHON)
 %typemap(in) ext::optional<BusinessDayConvention> %{
-	if($input == Py_None)
-		$1 = ext::nullopt;
-    else if (PyInt_Check($input))
-        $1 = (BusinessDayConvention) PyInt_AsLong($input);
-	else
-		$1 = (BusinessDayConvention) PyLong_AsLong($input);
+    if ($input == Py_None)
+        $1 = ext::nullopt;
+    else if (PyLong_Check($input))
+        $1 = (BusinessDayConvention)PyLong_AsLong($input);
+    else
+        SWIG_exception(SWIG_TypeError, "int expected");
 %}
-%typecheck (QL_TYPECHECK_BUSINESSDAYCONVENTION) ext::optional<BusinessDayConvention> {
-if (PyInt_Check($input) || PyLong_Check($input) || Py_None == $input)
-	$1 = 1;
-else
-	$1 = 0;
-}
+%typecheck (QL_TYPECHECK_BUSINESSDAYCONVENTION) ext::optional<BusinessDayConvention> %{
+    $1 = (PyLong_Check($input) || $input == Py_None) ? 1 : 0;
+%}
 #endif
 
 class Calendar {
@@ -84,10 +81,12 @@ class Calendar {
     Calendar();
   public:
     bool isWeekend(Weekday w);
+    Date startOfMonth(const Date&);
     Date endOfMonth(const Date&);
     bool isBusinessDay(const Date&);
     bool isHoliday(const Date&);
     bool isEndOfMonth(const Date&);
+    bool isStartOfMonth(const Date&);
     void addHoliday(const Date&);
     void removeHoliday(const Date&);
     void resetAddedAndRemovedHolidays();
@@ -110,25 +109,23 @@ class Calendar {
     std::vector<Date> businessDayList(const Date& from,
                                       const Date& to);
     std::string name();
+    bool empty();
     %extend {
         std::string __str__() {
             return self->name()+" calendar";
         }
         #if defined(SWIGPYTHON) || defined(SWIGJAVA)
-        bool __eq__(const Calendar& other) {
+        bool operator==(const Calendar& other) {
             return (*self) == other;
         }
-        bool __ne__(const Calendar& other) {
+        bool operator!=(const Calendar& other) {
             return (*self) != other;
+        }
+        hash_t __hash__() {
+            return self->empty() ? 0 : std::hash<std::string>()(self->name());
         }
         #endif
     }
-    #if defined(SWIGPYTHON)
-    %pythoncode %{
-    def __hash__(self):
-        return hash(self.name())
-    %}
-    #endif
 };
 
 namespace std {
@@ -230,7 +227,7 @@ namespace QuantLib {
 
     class Israel : public Calendar {
       public:
-        enum Market { Settlement, TASE };
+        enum Market { Settlement, TASE, SHIR };
         Israel(Market m = Settlement);
     };
 
@@ -248,9 +245,19 @@ namespace QuantLib {
         Mexico(Market m = BMV);
     };
 
-    class NewZealand : public Calendar {};
+    class NewZealand : public Calendar {
+      public:
+        enum Market { Wellington, Auckland };
+        NewZealand(Market m = Wellington);
+    };
+
     class Norway : public Calendar {};
-    class Poland : public Calendar {};
+
+    class Poland : public Calendar {
+      public:
+        enum Market { Settlement, WSE };
+        Poland(Market m = Settlement);
+    };
 
     class Romania : public Calendar {
       public:

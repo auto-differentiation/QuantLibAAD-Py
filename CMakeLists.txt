@@ -1,6 +1,6 @@
 ##############################################################################
-#   CMake file for QuantLib-Risks. The version set here is used for the Python
-#   package.
+#   CMake file for QuantLib-Risks, driven by scikit-build-core (pyproject.toml).
+#   Keep the version in sync with pyproject.toml.
 #
 #  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
 #  for risk computation using automatic differentiation. It uses XAD,
@@ -20,26 +20,38 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#   
+#
 ##############################################################################
 
-cmake_minimum_required(VERSION 3.15.0)
-project(QuantLib_Risks LANGUAGES CXX VERSION 1.33.3)
+cmake_minimum_required(VERSION 3.18...4.2)
+project(QuantLib_Risks LANGUAGES CXX VERSION 1.41.0)
 
-# For MSVC RUNTIME LIBRARY, need CMP0091=NEW and cmake 3.15+
-cmake_policy(SET CMP0091 NEW)
-set(PACKAGE_VERSION       "${PROJECT_VERSION}")
-set(PACKAGE_VERSION_HEX   "0x013303f0")
-set(QLR_VERSION ${PACKAGE_VERSION})
-set(QLR_HEX_VERSION ${PACKAGE_VERSION_HEX})
+set(QLR_VERSION ${PROJECT_VERSION})
+set(QLR_HEX_VERSION "0x014100f0")
 
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# static MSVC runtime everywhere (QuantLib, XAD, the module), as in xad-py
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-find_package(QuantLib-Risks REQUIRED)
-find_package(SWIG REQUIRED)
+option(QLR_QUANTLIB_ONLY
+       "Only build and install QuantLib + XAD + QuantLibAAD, for reuse via QLR_QUANTLIB_PREFIX"
+       OFF)
+set(QLR_QUANTLIB_PREFIX "" CACHE PATH
+    "Install prefix of a QLR_QUANTLIB_ONLY build to reuse (empty: build QuantLib from lib/)")
 
-include(UseSWIG)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-enable_testing()
+if(QLR_QUANTLIB_PREFIX AND NOT QLR_QUANTLIB_ONLY)
+  include(PrebuiltQuantLib)
+else()
+  include(QuantLibFromSource)
+endif()
 
-
-add_subdirectory(Python)
+if(NOT QLR_QUANTLIB_ONLY)
+  add_subdirectory(Python)
+endif()
