@@ -25,7 +25,7 @@
 
 [build-system]
 # swig 4.5 drops the PyInt_* macros used in SWIG/
-requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.5", "xad>=2.1,<2.3"]
+requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6", "xad>=2.1,<2.3"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -117,7 +117,7 @@ config-settings = { "cmake.define.QLR_QUANTLIB_PREFIX" = "{project}/build/quantl
 test-groups = ["test"]
 # until xad 2.2 is on PyPI (then also xad>=2.2): xad-py from git (then drop before-build, build-frontend,
 # before-test and XAD_REQUIREMENT)
-before-build = "pip install \"scikit-build-core>=0.11\" \"swig>=4.4,<4.5\" cmake ninja \"xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\""
+before-build = "pip install \"scikit-build-core>=0.11\" \"swig>=4.4,<4.6\" cmake ninja \"xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\""
 build-frontend = { name = "build", args = ["--no-isolation"] }
 before-test = "pip install \"xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\""
 # importlib mode tests the installed package; Python/test would clash with the stdlib test package
