@@ -25,7 +25,7 @@
 
 [build-system]
 # swig 4.5 drops the PyInt_* macros used in SWIG/
-requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.5"]
+requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6"]
 build-backend = "scikit_build_core.build"
 
 [project]
