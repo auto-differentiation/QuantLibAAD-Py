@@ -25,7 +25,7 @@
 
 [build-system]
 # swig 4.5 drops the PyInt_* macros used in SWIG/
-requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6"]
+requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6", "xad>=2.1,<2.3"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -70,8 +70,8 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development",
 ]
-# the binary module shares xad's tape and Real type: same XAD/pybind11 build
-dependencies = ["xad==2.1.*"]
+# the binary module links xad's libxad and shares its Real type (same pybind11)
+dependencies = ["xad>=2.1,<2.3"]
 
 [project.urls]
 Homepage = "https://auto-differentiation.github.io"
@@ -99,9 +99,6 @@ sdist.exclude = [
     "lib/QuantLib/Examples",
     "lib/QuantLib/test-suite",
     "lib/QuantLib/fuzz-test-suite",
-    "lib/xad/docs",
-    "lib/xad/samples",
-    "lib/xad/test",
     "lib/pybind11/docs",
     "lib/pybind11/tests",
 ]
@@ -111,16 +108,28 @@ build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]
 skip = ["cp3??t-*"]  # no free-threaded builds
 archs = ["native"]  # one arch per runner
 build-verbosity = 1
-# QuantLib (with XAD and QuantLibAAD) is built once per platform and reused
-# by all wheels through QLR_QUANTLIB_PREFIX
-before-all = "cmake -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
+# QuantLib (with QuantLibAAD) is built once per platform and reused by all
+# wheels through QLR_QUANTLIB_PREFIX, against the XAD of a xad package that
+# build-quantlib.cmake installs (XAD_REQUIREMENT)
+before-all = "cmake \"-DXAD_REQUIREMENT=xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\" -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
 config-settings = { "cmake.define.QLR_QUANTLIB_PREFIX" = "{project}/build/quantlib-prefix" }
 test-groups = ["test"]
-# xad 2.1 is released together with this package: until then, test against xad-py main
-before-test = "pip install \"xad @ git+https://github.com/auto-differentiation/xad-py.git@7961b377f2cbbfec994193f55c23d7be34a72b5c\""
+# until xad 2.2 is on PyPI (then also xad>=2.2): xad-py from git (then drop before-build, build-frontend,
+# before-test and XAD_REQUIREMENT)
+before-build = "pip install \"scikit-build-core>=0.11\" \"swig>=4.4,<4.6\" cmake ninja \"xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\""
+build-frontend = { name = "build", args = ["--no-isolation"] }
+before-test = "pip install \"xad @ git+https://github.com/auto-differentiation/xad-py.git@9ca179764907ba44038efd1beb3631d35a5e22ea\""
 # importlib mode tests the installed package; Python/test would clash with the stdlib test package
 test-command = "pytest -p no:cacheprovider --import-mode=importlib {project}/Python/test"
 
+# libxad comes from the xad package (rpath to xad/lib), never bundled
+[tool.cibuildwheel.linux]
+repair-wheel-command = "auditwheel repair --exclude libxad.so -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.windows]
+repair-wheel-command = "pip install delvewheel && delvewheel repair --exclude xad.dll -w {dest_dir} {wheel}"
+
 [tool.cibuildwheel.macos]
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} --ignore-missing-dependencies --exclude libxad.dylib -w {dest_dir} -v {wheel}"
 # one target for the QuantLib build (before-all) and all wheels (raised to 11.0 on arm64)
 environment = { MACOSX_DEPLOYMENT_TARGET = "10.15" }

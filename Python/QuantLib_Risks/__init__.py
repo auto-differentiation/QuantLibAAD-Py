@@ -31,6 +31,8 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 """
 
+import xad  # loads libxad, which the binary module links against
+
 from .QuantLib_Risks import *
 
 if XAD_ENABLED:
@@ -51,41 +53,6 @@ if XAD_ENABLED:
         x1: List[Union[Real, float, int]] = [], x2: List[Union[Real, float, int]] = []
     ) -> Tuple[List[Real], List[Real]]:
         return ([Real(x) for x in x1], [Real(x) for x in x2])
-
-    # monkey-patch the tape activation function to register this tape with QuantLib's internal
-    # global tape pointer (we have 2 due to double static linking)
-    def _wrap_tape_activation():
-        original_enter = Tape.__enter__
-
-        def _tape_enter(t: Tape):
-            t = original_enter(t)
-            _QuantLib_Risks._activate_tape(t)
-            return t
-
-        original_exit = Tape.__exit__
-
-        def _tape_exit(t: Tape, *args, **kwargs):
-            original_exit(t, *args, **kwargs)
-            _QuantLib_Risks._deactivate_tape()
-
-        original_activate = Tape.activate
-
-        def _tape_activate(t: Tape):
-            original_activate(t)
-            _QuantLib_Risks._activate_tape(t)
-
-        original_deactivate = Tape.deactivate
-
-        def _tape_deactivate(t: Tape):
-            original_deactivate(t)
-            _QuantLib_Risks._deactivate_tape()
-
-        Tape.__enter__ = _tape_enter
-        Tape.__exit__ = _tape_exit
-        Tape.activate = _tape_activate
-        Tape.deactivate = _tape_deactivate
-
-    _wrap_tape_activation()
 
 if hasattr(_QuantLib_Risks, "__version__"):
     __version__ = _QuantLib_Risks.__version__

@@ -1,4 +1,4 @@
-# submodules are bumped manually (XAD and pybind11 must match xad)
+# submodules are bumped manually (pybind11 must match xad)
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
@@ -8,7 +8,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # pinned to the XAD in lib/xad
+      # one major.minor series, bumped manually
       - dependency-name: "xad"
     groups:
       python:

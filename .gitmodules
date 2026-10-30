@@ -1,9 +1,6 @@
 [submodule "lib/QuantLib"]
 	path = lib/QuantLib
 	url = https://github.com/lballabio/QuantLib.git
-[submodule "lib/xad"]
-	path = lib/xad
-	url = https://github.com/auto-differentiation/xad.git
 [submodule "lib/QuantLibAAD"]
 	path = lib/QuantLibAAD
 	url = https://github.com/auto-differentiation/QuantLibAAD.git

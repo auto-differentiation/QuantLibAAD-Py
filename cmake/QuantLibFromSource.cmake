@@ -1,20 +1,9 @@
-# Builds QuantLib as a static library with XAD and QuantLibAAD from lib/.
-# Defines QuantLib::QuantLib. With QLR_QUANTLIB_ONLY, builds and installs only these.
+# Builds QuantLib as a static library with QuantLibAAD from lib/, against XAD::xad
+# (QLRXad). Defines QuantLib::QuantLib. With QLR_QUANTLIB_ONLY, builds and installs only these.
 
 set(QLR_LIB_DIR "${PROJECT_SOURCE_DIR}/lib")
 
 include(QLRBoost)
-
-# XAD: the tape is shared with xad-py, so this must match its configuration
-set(XAD_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-set(XAD_NO_THREADLOCAL ON CACHE BOOL "" FORCE)
-set(XAD_STATIC_MSVC_RUNTIME ON CACHE BOOL "" FORCE)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
-  set(XAD_SIMD_OPTION AVX CACHE STRING "XAD SIMD instruction set")
-else()
-  # no arch flags, XAD would pick -mavx on aarch64 Linux
-  set(XAD_SIMD_OPTION NONE CACHE STRING "XAD SIMD instruction set")
-endif()
 
 # QuantLib: static, no tests/examples/benchmark
 set(BUILD_SHARED_LIBS OFF)
@@ -23,7 +12,7 @@ foreach(opt QL_BUILD_TEST_SUITE QL_BUILD_EXAMPLES QL_BUILD_BENCHMARK
   set(${opt} OFF CACHE BOOL "" FORCE)
 endforeach()
 set(QL_NULL_AS_FUNCTIONS ON CACHE BOOL "" FORCE)
-set(QL_EXTERNAL_SUBDIRECTORIES "${QLR_LIB_DIR}/xad;${QLR_LIB_DIR}/QuantLibAAD" CACHE STRING "" FORCE)
+set(QL_EXTERNAL_SUBDIRECTORIES "${QLR_LIB_DIR}/QuantLibAAD" CACHE STRING "" FORCE)
 set(QL_EXTRA_LINK_LIBRARIES QuantLibAAD CACHE STRING "" FORCE)
 # QuantLib's find_package(Boost) (FindBoost module) uses the headers from QLRBoost
 set(CMAKE_POLICY_DEFAULT_CMP0167 OLD)
@@ -64,4 +53,10 @@ if(QLR_BOOST_DOWNLOADED)
   if(QLR_QUANTLIB_ONLY)
     install(DIRECTORY "${QLR_BOOST_INCLUDE_DIR}/boost" DESTINATION "${QL_INSTALL_INCLUDEDIR}")
   endif()
+endif()
+
+if(QLR_QUANTLIB_ONLY)
+  # checked by PrebuiltQuantLib: the extension must use the same XAD
+  file(WRITE "${CMAKE_BINARY_DIR}/QLRXadVersion.cmake" "set(QLR_QUANTLIB_XAD_VERSION ${XAD_VERSION})\n")
+  install(FILES "${CMAKE_BINARY_DIR}/QLRXadVersion.cmake" DESTINATION "${QLAAD_INSTALL_CMAKEDIR}")
 endif()

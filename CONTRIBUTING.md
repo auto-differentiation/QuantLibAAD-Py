@@ -52,9 +52,9 @@ accepted:
 
 The package is built in one step by [scikit-build-core](https://scikit-build-core.readthedocs.io)
 (see `pyproject.toml`): CMake builds QuantLib as a static library together with
-[XAD](https://github.com/auto-differentiation/xad) and
 [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) from the `lib/` submodules,
-then the SWIG module from `SWIG/` and `Python/QuantLib_Risks/`.
+against [XAD](https://github.com/auto-differentiation/xad) from the installed
+[xad](https://pypi.org/project/xad/) package (`xad.get_cmake_dir()`), then the SWIG module from `SWIG/` and `Python/QuantLib_Risks/`.
 
 Requirements: Python 3.10+, and a C++17 compiler.
 CMake, Ninja and SWIG are installed as build dependencies.
@@ -72,16 +72,16 @@ cd /tmp && python -m pytest --import-mode=importlib /path/to/QuantLib-Risks-Py/P
 
 Notes:
 
--   The binary module shares XAD's tape and `Real` type with the
-    [xad](https://pypi.org/project/xad/) package, so `lib/xad` and `lib/pybind11` must be the
-    exact versions xad is built with, and the `xad` requirement is pinned to that XAD
-    major.minor series. Update them together.
+-   The binary module links the xad package's shared libxad (found at runtime through the
+    rpath `../xad/lib`, never bundled in the wheel) and shares its `Real` type, so
+    `lib/pybind11` must be the exact version xad is built with, and the `xad` requirement is
+    pinned to one major.minor series. Update them together.
 -   `lib/QuantLib` is an unmodified QuantLib release; AAD support comes from QuantLibAAD.
 -   Building QuantLib takes most of the time. To reuse it across builds (e.g. several Python
     versions), install it once and point the package build at it:
 
     ```bash
-    cmake -DPREFIX=$PWD/build/quantlib-prefix -P tools/build-quantlib.cmake
+    cmake -DPREFIX=$PWD/build/quantlib-prefix -DPYTHON=$(which python) -P tools/build-quantlib.cmake
     pip install -v . -Ccmake.define.QLR_QUANTLIB_PREFIX=$PWD/build/quantlib-prefix
     ```
 
