@@ -1,8 +1,8 @@
 ##############################################################################
-#   CMake file for QuantLib-Risks, driven by scikit-build-core (pyproject.toml).
+#   CMake file for QuantLibAAD, driven by scikit-build-core (pyproject.toml).
 #   Keep the version in sync with pyproject.toml.
 #
-#  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+#  This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
 #  for risk computation using automatic differentiation. It uses XAD,
 #  a fast and comprehensive C++ library for automatic differentiation.
 #
@@ -24,7 +24,7 @@
 ##############################################################################
 
 cmake_minimum_required(VERSION 3.18...4.2)
-project(QuantLib_Risks LANGUAGES CXX VERSION 1.41.0)
+project(QuantLibAAD_Py LANGUAGES CXX VERSION 1.41.0)
 
 set(QLR_VERSION ${PROJECT_VERSION})
 set(QLR_HEX_VERSION "0x014100f0")

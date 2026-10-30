@@ -1,4 +1,4 @@
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 import operator
 import unittest
 

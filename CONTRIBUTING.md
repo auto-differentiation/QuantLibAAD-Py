@@ -7,12 +7,12 @@ Note that this fork is importing all changes from the QuantLib-SWIG repository o
 release. Changes related to QuantLib's own Python bindings will be included in each new
 release. 
 Contributions to this repository should only be made if they are related to building
-the Python bindings for QuantLib-Risks (enabled with XAD).
+the Python bindings for QuantLibAAD (enabled with XAD).
 
 1.  Fork, then clone the repository with its submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/yourusername/QuantLib-Risks-Py.git
+git clone --recurse-submodules https://github.com/yourusername/QuantLibAAD-Py.git
 ```
 
 2.  Follow the [Build Instructions](#build-instructions) below to build the software.
@@ -54,7 +54,7 @@ The package is built in one step by [scikit-build-core](https://scikit-build-cor
 (see `pyproject.toml`): CMake builds QuantLib as a static library together with
 [QuantLibAAD](https://github.com/auto-differentiation/QuantLibAAD) from the `lib/` submodules,
 against [XAD](https://github.com/auto-differentiation/xad) from the installed
-[xad](https://pypi.org/project/xad/) package (`xad.get_cmake_dir()`), then the SWIG module from `SWIG/` and `Python/QuantLib_Risks/`.
+[xad](https://pypi.org/project/xad/) package (`xad.get_cmake_dir()`), then the SWIG module from `SWIG/` and `Python/QuantLibAAD/`.
 
 Requirements: Python 3.10+, and a C++17 compiler.
 CMake, Ninja and SWIG are installed as build dependencies.
@@ -67,7 +67,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -v . pytest
 # run the tests from outside the source tree, against the installed package
-cd /tmp && python -m pytest --import-mode=importlib /path/to/QuantLib-Risks-Py/Python/test
+cd /tmp && python -m pytest --import-mode=importlib /path/to/QuantLibAAD-Py/Python/test
 ```
 
 Notes:
@@ -88,8 +88,11 @@ Notes:
 -   Wheels for all supported Python versions are built with
     [cibuildwheel](https://cibuildwheel.pypa.io) (`pipx run cibuildwheel`, configured in
     `pyproject.toml`), the source distribution with `pipx run build --sdist`.
+-   `shim/` is the pure-Python `QuantLib-Risks` distribution, a deprecated alias that requires
+    `QuantLibAAD` and re-exports it as `QuantLib_Risks`. Build it with `pipx run build shim`
+    and keep its version and `QuantLibAAD` requirement in sync with `pyproject.toml`.
 
 
-[pr]: https://github.com/auto-differentiation/QuantLib-Risks/compare/
+[pr]: https://github.com/auto-differentiation/QuantLibAAD-Py/compare/
 
 [cla]: https://gist.github.com/auto-differentiation-dev/5c6121c3f341e2de710fa034e9ff3263

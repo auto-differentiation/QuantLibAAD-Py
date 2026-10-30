@@ -3,16 +3,16 @@
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
  Copyright (C) 2024 Xcelerit Computing Limited.
 
- This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+ This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
  for risk computation using automatic differentiation. It uses XAD,
  a fast and comprehensive C++ library for automatic differentiation.
 
- QuantLib-Risks and XAD are free software: you can redistribute it and/or modify
+ QuantLibAAD and XAD are free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
 
- QuantLib-Risks is distributed in the hope that it will be useful,
+ QuantLibAAD is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU Affero General Public License for more details.
@@ -33,16 +33,16 @@
 
 import xad  # loads libxad, which the binary module links against
 
-from .QuantLib_Risks import *
+from .QuantLibAAD import *
 
 if XAD_ENABLED:
     from xad.adj_1st import Real, Tape
     from typing import Union, Tuple, List
 
-    # as part of the input at the top, we'll have _QuantLib_Risks in scope
-    DoubleVector = _QuantLib_Risks.DoubleVector
-    DoublePairVector = _QuantLib_Risks.DoublePairVector
-    DoubleVectorVector = _QuantLib_Risks.DoubleVectorVector
+    # as part of the input at the top, we'll have _QuantLibAAD in scope
+    DoubleVector = _QuantLibAAD.DoubleVector
+    DoublePairVector = _QuantLibAAD.DoublePairVector
+    DoubleVectorVector = _QuantLibAAD.DoubleVectorVector
 
     def Concentrating1dMesherPoint(
         x1: Union[Real, float, int], x2: Union[Real, float, int], v: bool
@@ -54,16 +54,16 @@ if XAD_ENABLED:
     ) -> Tuple[List[Real], List[Real]]:
         return ([Real(x) for x in x1], [Real(x) for x in x2])
 
-if hasattr(_QuantLib_Risks, "__version__"):
-    __version__ = _QuantLib_Risks.__version__
-elif hasattr(_QuantLib_Risks.cvar, "__version__"):
-    __version__ = _QuantLib_Risks.cvar.__version__
+if hasattr(_QuantLibAAD, "__version__"):
+    __version__ = _QuantLibAAD.__version__
+elif hasattr(_QuantLibAAD.cvar, "__version__"):
+    __version__ = _QuantLibAAD.cvar.__version__
 else:
     print("Could not find __version__ attribute")
 
-if hasattr(_QuantLib_Risks, "__hexversion__"):
-    __hexversion__ = _QuantLib_Risks.__hexversion__
-elif hasattr(_QuantLib_Risks.cvar, "__hexversion__"):
-    __hexversion__ = _QuantLib_Risks.cvar.__hexversion__
+if hasattr(_QuantLibAAD, "__hexversion__"):
+    __hexversion__ = _QuantLibAAD.__hexversion__
+elif hasattr(_QuantLibAAD.cvar, "__hexversion__"):
+    __hexversion__ = _QuantLibAAD.cvar.__hexversion__
 else:
     print("Could not find __hexversion__ attribute")

@@ -3,16 +3,16 @@
 # - OR pushes of tags starting with v*
 # - OR manual dispatch on repo
 # publishes to test pypi if:
-# - in auto-differentiation/QuantLib-Risks-Py repository AND
+# - in auto-differentiation/QuantLibAAD-Py repository AND
 #   - pushes of tags starting with v*
 #   - OR manual dispatch on repo
 # publishes to real PyPI if:
 # - publish to Test PyPI worked (with all build conditions above)
 # - and if it's a version tag (starting with v*)
 #
-# cibuildwheel config: [tool.cibuildwheel] in pyproject.toml
+# cibuildwheel config: [tool.cibuildwheel] in pyproject.toml; shim/ is built alongside
 
-name: QuantLib-Risks wheels
+name: QuantLibAAD wheels
 on:
   pull_request:
     branches:
@@ -87,7 +87,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v7
         with:
-          name: cibw-wheels-${{ matrix.platform.name }}-${{ matrix.python }}
+          name: dist-wheels-${{ matrix.platform.name }}-${{ matrix.python }}
           path: ./wheelhouse/*.whl
           if-no-files-found: error
 
@@ -110,26 +110,44 @@ jobs:
       - name: Upload sdist
         uses: actions/upload-artifact@v7
         with:
-          name: cibw-sdist
+          name: dist-sdist
           path: dist/*.tar.gz
           if-no-files-found: error
 
+  build_shim:
+    name: QuantLib-Risks shim
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build sdist and wheel
+        run: pipx run build --outdir dist shim
+      - name: Check metadata
+        run: pipx run twine check --strict dist/*
+      - name: Upload shim
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-shim
+          path: dist/*
+          if-no-files-found: error
+
   test-publish:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, build_sdist, build_shim]
     if: >-
-      github.repository == 'auto-differentiation/QuantLib-Risks-Py' &&
+      github.repository == 'auto-differentiation/QuantLibAAD-Py' &&
       (github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')))
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/QuantLib-Risks
+      url: https://test.pypi.org/p/QuantLibAAD
     permissions:
       id-token: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: cibw-*
+          pattern: dist-*
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@v1.14.3
@@ -145,13 +163,13 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment:
       name: pypi
-      url: https://pypi.org/p/QuantLib-Risks
+      url: https://pypi.org/p/QuantLibAAD
     permissions:
       id-token: write
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: cibw-*
+          pattern: dist-*
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@v1.14.3

@@ -1,7 +1,7 @@
 ##############################################################################
 #  Main CMake file for the Python extension.
 #
-#  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+#  This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
 #  for risk computation using automatic differentiation. It uses XAD,
 #  a fast and comprehensive C++ library for automatic differentiation.
 #
@@ -30,4 +30,4 @@ include(UseSWIG)
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(${PROJECT_SOURCE_DIR}/lib/pybind11 ${CMAKE_BINARY_DIR}/pybind11)
 
-add_subdirectory(QuantLib_Risks)
+add_subdirectory(QuantLibAAD)

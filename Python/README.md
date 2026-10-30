@@ -9,8 +9,12 @@ Useful links:
 ## Installation
 
 ```
-pip install QuantLib-Risks
+pip install QuantLibAAD
 ```
+
+This package was called QuantLib-Risks up to version 1.33.3. `QuantLib-Risks` 1.41 is a
+deprecated alias that installs `QuantLibAAD` and keeps `import QuantLib_Risks` working with a
+`DeprecationWarning`. Anyone pinned to `QuantLib-Risks==1.33.3` must also pin `xad<2`.
 
 Binary wheels are provided for CPython 3.10 to 3.14 on Linux (x86_64, aarch64), macOS (x86_64, arm64)
 and Windows (x86_64). The package requires the matching [xad](https://pypi.org/project/xad/) release,
@@ -22,20 +26,20 @@ On other platforms pip builds the package from the source distribution, which co
 and takes a while. This needs a C++17 compiler; CMake, Ninja and SWIG are
 fetched as build dependencies, and Boost headers are downloaded unless found on the system
 (or via `BOOST_ROOT`). To build from a clone of the
-[repository](https://github.com/auto-differentiation/QuantLib-Risks-Py):
+[repository](https://github.com/auto-differentiation/QuantLibAAD-Py):
 
 ```
-git clone --recurse-submodules https://github.com/auto-differentiation/QuantLib-Risks-Py.git
-pip install -v ./QuantLib-Risks-Py
+git clone --recurse-submodules https://github.com/auto-differentiation/QuantLibAAD-Py.git
+pip install -v ./QuantLibAAD-Py
 ```
 
 ## Usage Illustration
 
 ```python
-import QuantLib_Risks as ql
+import QuantLibAAD as ql
 from xad.adj_1st import Tape
 
-with Tape() as t:
+with Tape() as tape:
     rate = ql.Real(0.2)
     tape.registerInput(rate)
     
@@ -55,4 +59,4 @@ with Tape() as t:
 ## Related Projects
 
 - XAD Comprehensive automatic differentiation in [Python](https://github.com/auto-differentiation/xad-py) and [C++](https://github.com/auto-differentiation/xad)
-- QuantLib-Risks: Fast risk evaluations in [Python](https://github.com/auto-differentiation/QuantLib-Risks-Py) and [C++ (QuantLibAAD)](https://github.com/auto-differentiation/QuantLibAAD)
+- QuantLibAAD: Fast risk evaluations in [Python](https://github.com/auto-differentiation/QuantLibAAD-Py) and [C++](https://github.com/auto-differentiation/QuantLibAAD)

@@ -1,8 +1,8 @@
 ##############################################################################
 #
-#  QuantLib-Risks - package and build configuration
+#  QuantLibAAD - package and build configuration
 #
-#  This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+#  This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
 #  for risk computation using automatic differentiation. It uses XAD,
 #  a fast and comprehensive C++ library for automatic differentiation.
 #
@@ -29,7 +29,7 @@ requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6", "xad>=2.1,<2.3"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "QuantLib-Risks"
+name = "QuantLibAAD"
 # keep in sync with CMakeLists.txt
 version = "1.41.0"
 description = "Fast risks calculations in QuantLib"
@@ -75,10 +75,10 @@ dependencies = ["xad>=2.1,<2.3"]
 
 [project.urls]
 Homepage = "https://auto-differentiation.github.io"
-Repository = "https://github.com/auto-differentiation/QuantLib-Risks-Py"
+Repository = "https://github.com/auto-differentiation/QuantLibAAD-Py"
 Documentation = "https://auto-differentiation.github.io/quantlib-risks/python/"
-Download = "https://pypi.org/project/QuantLib-Risks/#files"
-Tracker = "https://github.com/auto-differentiation/QuantLib-Risks-Py/issues"
+Download = "https://pypi.org/project/QuantLibAAD/#files"
+Tracker = "https://github.com/auto-differentiation/QuantLibAAD-Py/issues"
 
 [dependency-groups]
 test = ["pytest"]
@@ -87,13 +87,14 @@ test = ["pytest"]
 minimum-version = "build-system.requires"
 cmake.version = ">=3.18"
 build.verbose = true
-# the package is installed by CMake (Python/QuantLib_Risks/CMakeLists.txt)
+# the package is installed by CMake (Python/QuantLibAAD/CMakeLists.txt)
 wheel.packages = []
 install.components = ["python"]
 # submodule parts not needed to build
 sdist.exclude = [
     ".github",
     "binder",
+    "shim",
     "build",
     "lib/QuantLib/Docs",
     "lib/QuantLib/Examples",

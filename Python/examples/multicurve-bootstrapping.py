@@ -18,7 +18,7 @@
 #
 # This sample prices a forward-starting interest rate swap on a curve that
 # has been bootrapped on a large number of market quotes. 
-# It calculates all sensitivities using QuantLib-Risks and measures the performance
+# It calculates all sensitivities using QuantLibAAD and measures the performance
 # (averaged over a number of repetitions).
 #
 # Pricing using standard QuantLib can also be done by simply changing the import
@@ -31,16 +31,16 @@
 # Copyright (&copy;) 2018 Jose Garcia<br>
 # Copyright (&copy;) 2024 Xcelerit Computing Limited.
 #
-# This file is part of QuantLib-Risks, a Python wrapper for QuantLib enabled
+# This file is part of QuantLibAAD, a Python wrapper for QuantLib enabled
 # for risk computation using automatic differentiation. It uses XAD,
 # a fast and comprehensive C++ library for automatic differentiation.
 #
-# QuantLib-Risks and XAD are free software: you can redistribute it and/or modify
+# QuantLibAAD and XAD are free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# QuantLib-Risks is distributed in the hope that it will be useful,
+# QuantLibAAD is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
@@ -60,7 +60,7 @@
 
 # %%
 
-import QuantLib_Risks as ql  # enable this to calculate sensitivities
+import QuantLibAAD as ql  # enable this to calculate sensitivities
 
 # import QuantLib as ql  # enable this for regular QuantLib performance
 
@@ -578,7 +578,7 @@ N = 20  # iterations to repeat pricing for performance measurements
 
 
 if not getattr(ql, "XAD_ENABLED", False):
-    # ql.XAD_ENABLED is set if we're using QuantLib-Risks
+    # ql.XAD_ENABLED is set if we're using QuantLibAAD
     print("Pricing swap with multicurve bootstrapping without sensitivities...")
     start = time.perf_counter_ns()
     for _ in range(N):

@@ -566,9 +566,9 @@ def __init__(self, quote, lag, maturity, calendar, bdc, dayCounter, index, obser
     __init__(ZeroCouponInflationSwapHelper self, QuoteHandle quote, Period lag, Date maturity, Calendar calendar, BusinessDayConvention bdc, DayCounter dayCounter, ext::shared_ptr< ZeroInflationIndex > const & index, CPI::InterpolationType observationInterpolation, YieldTermStructureHandle nominalTS) -> ZeroCouponInflationSwapHelper
     """
     if nominalTS is None:
-        _QuantLib_Risks.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib_Risks.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation))
+        _QuantLibAAD.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLibAAD.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation))
     else:
-        _QuantLib_Risks.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLib_Risks.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation, nominalTS))
+        _QuantLibAAD.ZeroCouponInflationSwapHelper_swiginit(self, _QuantLibAAD.new_ZeroCouponInflationSwapHelper(quote, lag, maturity, calendar, bdc, dayCounter, index, observationInterpolation, nominalTS))
 %}
 #endif
   public:
