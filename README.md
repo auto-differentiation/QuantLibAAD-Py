@@ -28,6 +28,10 @@ pip install QuantLibAAD
 import QuantLibAAD as ql
 ```
 
+It links the XAD library that the [xad](https://pypi.org/project/xad) package ships, so
+QuantLib and `xad` share one active tape per thread: a `xad.adj_1st.Tape` records QuantLib's
+calculations as well as your own.
+
 ### Formerly QuantLib-Risks
 
 This package was called QuantLib-Risks up to version 1.33.3. From 1.41, `QuantLib-Risks`
@@ -37,7 +41,7 @@ with a `DeprecationWarning`. Please switch to `pip install QuantLibAAD` and
 
 ## Getting Help
 
-For documentation and other resources, see https://auto-differentiation.github.io/quantlib-risks/python/ .
+For documentation and other resources, see https://auto-differentiation.github.io/quantlib-aad/python/ .
 
 If you have found an issue, want to report a bug, or have a feature request, please raise a [GitHub issue](https://github.com/auto-differentiation/QuantLibAAD-Py/issues).
 
