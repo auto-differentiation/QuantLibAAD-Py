@@ -57,6 +57,10 @@ with Tape() as tape:
     print(f"delta = {rate.derivative}")
 ```
 
+## Commercial use
+
+QuantLibAAD's integration code and [XAD](https://github.com/auto-differentiation/xad) are open source under the AGPL, to try them, for research and for open-source projects. The AGPL is not suitable for enterprise settings: for use in your organization you need a separate commercial license from Xcelerit, by annual XAD subscription. [Ask for a quote](https://www.xcelerit.com/quantlib/#start) (we reply within one business day) or [book a free, confidential license check](https://www.xcelerit.com/xad/licensing/#check).
+
 ## Related Projects
 
 - XAD Comprehensive automatic differentiation in [Python](https://github.com/auto-differentiation/xad-py) and [C++](https://github.com/auto-differentiation/xad)
