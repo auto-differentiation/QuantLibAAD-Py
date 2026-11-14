@@ -17,7 +17,7 @@ It uses elements from [QuantLib-SWIG](https://github.com/lballabio/QuantLib-SWIG
 is kept in sync with it.
 
 > [!IMPORTANT]
-> **Using QuantLibAAD in your organization?** QuantLibAAD's integration code and [XAD](https://github.com/auto-differentiation/xad) are open source under the AGPL, to try them, for research and for open-source projects. The AGPL is not suitable for enterprise settings: for use in your organization you need a separate commercial license from Xcelerit, by annual XAD subscription. [Ask for a quote](https://www.xcelerit.com/quantlib/#start) (we reply within one business day) or [book a free, confidential license check](https://www.xcelerit.com/xad/licensing/#check).
+> **Using QuantLibAAD in your organization?** QuantLibAAD's integration code and [XAD](https://github.com/auto-differentiation/xad) are open source under the AGPL, to try them, for research and for open-source projects. The AGPL is not suitable for enterprise settings: for use in your organization you need a separate commercial license from Xcelerit, by annual XAD subscription. See [XAD licensing](https://www.xcelerit.com/xad/licensing/) for the terms, a quote within one business day, or a free, confidential license check.
 
 ## Getting Started
 
