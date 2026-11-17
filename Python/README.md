@@ -1,5 +1,5 @@
 This package enables fast risks calculations on the QuantLib Python package. 
-It provides the same interface as the [standard QuantLib package](https://pypi.org/project/QuantLib/), and in addition allows to calculate risks (sensitivities) using automatic differentiation via the [XAD automatic differentiation tool](https://auto-differentation.github.io).
+It provides the same interface as the [standard QuantLib package](https://pypi.org/project/QuantLib/), and in addition allows to calculate risks (sensitivities) using automatic differentiation via the [XAD automatic differentiation tool](https://github.com/auto-differentiation/xad).
 
 Useful links:
 
