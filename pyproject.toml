@@ -25,13 +25,13 @@
 
 [build-system]
 # swig 4.5 drops the PyInt_* macros used in SWIG/
-requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6", "xad>=2.2,<2.3"]
+requires = ["scikit-build-core>=0.11", "swig>=4.4,<4.6", "xad>=2.3,<2.4"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "QuantLibAAD"
 # keep in sync with CMakeLists.txt
-version = "1.44.0"
+version = "1.44.1"
 description = "Fast risks calculations in QuantLib"
 readme = "Python/README.md"
 requires-python = ">=3.10"
@@ -70,7 +70,7 @@ classifiers = [
     "Topic :: Software Development",
 ]
 # the binary module links xad's libxad and shares its Real type (same pybind11)
-dependencies = ["xad>=2.2,<2.3"]
+dependencies = ["xad>=2.3,<2.4"]
 
 [project.urls]
 Homepage = "https://www.xcelerit.com/xad/docs/"
@@ -110,7 +110,7 @@ build-verbosity = 1
 # QuantLib (with QuantLibAAD) is built once per platform and reused by all
 # wheels through QLR_QUANTLIB_PREFIX, against the XAD of a xad package that
 # build-quantlib.cmake installs (XAD_REQUIREMENT)
-before-all = "cmake \"-DXAD_REQUIREMENT=xad>=2.2,<2.3\" -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
+before-all = "cmake \"-DXAD_REQUIREMENT=xad>=2.3,<2.4\" -DPREFIX={project}/build/quantlib-prefix -P {project}/tools/build-quantlib.cmake"
 config-settings = { "cmake.define.QLR_QUANTLIB_PREFIX" = "{project}/build/quantlib-prefix" }
 test-groups = ["test"]
 # importlib mode tests the installed package; Python/test would clash with the stdlib test package
