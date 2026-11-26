@@ -7,7 +7,15 @@ the underlying QuantLib-SWIG changelog.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.44.1] - 2026-11-25
+
+### Changed
+
+- Requires xad 2.3 (built on XAD 2.3.0)
+- `import QuantLibAAD` shows xad's short license notice on stderr once per Python environment
+  (from xad 2.3)
+- PyPI: the homepage and documentation links point to the XAD pages on xcelerit.com, and the
+  package is listed under the AGPL license only (the proprietary license classifier is removed)
 
 ### Removed
 
@@ -75,7 +83,7 @@ First release as QuantLibAAD.
 Initial release, matching QuantLib Python bindings version 1.33
 
 
-[Unreleased]: https://github.com/auto-differentiation/QuantLibAAD-Py/compare/v1.44.0...HEAD
+[1.44.1]: https://github.com/auto-differentiation/QuantLibAAD-Py/compare/v1.44.0...v1.44.1
 [1.44.0]: https://github.com/auto-differentiation/QuantLibAAD-Py/compare/v1.33.3...v1.44.0
 
 [1.33.3]: https://github.com/auto-differentiation/QuantLib-Risks-Py/compare/v1.33.2...v1.33.3
