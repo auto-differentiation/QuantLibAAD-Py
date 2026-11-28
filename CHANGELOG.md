@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example `scaling-adjoint.py`: cost of all sensitivities of an option book with AAD and with
   bumping as the volatility surface grows
 - Example `trade-risk.py`: sensitivities of every swap in a book to every curve quote with AAD
+- Example `replication-adjoint.py`: sensitivities of a statically replicated barrier option to all market inputs in one adjoint pass
 
 
 ## [1.44.0] - 2026-11-12
